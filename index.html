@@ -9,8 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
     <link rel="apple-touch-icon" href="DW-24-Logo.png">
 
-    <!-- Facebook Pixel (Platzhalter für spätere Integration) -->
-    <!-- <script>!function(f,b,e,v,n,t,s){...}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','PIXEL_ID');fbq('track','PageView');</script> -->
+    <!-- Facebook Pixel wird über Cookie-Banner geladen (DSGVO-konform) -->
 
     <style>
         /* ===== CSS Reset & Basis ===== */
@@ -774,6 +773,194 @@
             background: var(--bg);
         }
 
+        /* ===== Cookie-Banner (DSGVO) ===== */
+        .cookie-banner {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--dark);
+            color: #CBD5E1;
+            padding: 24px 20px;
+            z-index: 9999;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .cookie-banner.active {
+            display: block;
+        }
+
+        .cookie-inner {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .cookie-banner h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .cookie-banner p {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .cookie-banner a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .cookie-details {
+            display: none;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .cookie-details.active {
+            display: block;
+        }
+
+        .cookie-category {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cookie-category:last-child {
+            border-bottom: none;
+        }
+
+        .cookie-category-info h4 {
+            color: #fff;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .cookie-category-info p {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+            color: #94A3B8;
+        }
+
+        .cookie-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        .cookie-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .cookie-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #475569;
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+
+        .cookie-slider::before {
+            content: '';
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .cookie-toggle input:checked + .cookie-slider {
+            background: var(--primary);
+        }
+
+        .cookie-toggle input:checked + .cookie-slider::before {
+            transform: translateX(20px);
+        }
+
+        .cookie-toggle input:disabled + .cookie-slider {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .cookie-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .cookie-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .cookie-btn-accept {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .cookie-btn-accept:hover {
+            background: var(--primary-dark);
+        }
+
+        .cookie-btn-reject {
+            background: #475569;
+            color: #fff;
+        }
+
+        .cookie-btn-reject:hover {
+            background: #374151;
+        }
+
+        .cookie-btn-settings {
+            background: transparent;
+            color: #94A3B8;
+            padding: 10px 16px;
+            text-decoration: underline;
+        }
+
+        .cookie-btn-settings:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .cookie-buttons {
+                flex-direction: column;
+            }
+
+            .cookie-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
         .modal h2 {
             font-size: 1.5rem;
             margin-bottom: 20px;
@@ -1127,11 +1314,55 @@
                 <a href="#" onclick="openModal('impressum'); return false;">Impressum</a>
                 <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutz</a>
                 <a href="#" onclick="openModal('teilnahme'); return false;">Teilnahmebedingungen</a>
+                <a href="#" onclick="reopenCookieBanner(); return false;">Cookie-Einstellungen</a>
                 <a href="mailto:partner@digitalwerk24.com">partner@digitalwerk24.com</a>
             </div>
             <p>&copy; 2026 Digitalwerk24. Alle Rechte vorbehalten.</p>
         </div>
     </footer>
+
+    <!-- ===== Cookie-Banner (DSGVO) ===== -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-inner">
+            <h3>🍪 Cookie-Einstellungen</h3>
+            <p>
+                Wir nutzen Cookies und ähnliche Technologien, um Ihnen die bestmögliche Erfahrung zu bieten.
+                Technisch notwendige Cookies sind für den Betrieb der Seite erforderlich.
+                Marketing-Cookies helfen uns, unsere Werbung zu verbessern.
+                Mehr erfahren Sie in unserer <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutzerklärung</a>.
+            </p>
+
+            <!-- Detaillierte Cookie-Einstellungen (ein-/ausklappbar) -->
+            <div class="cookie-details" id="cookieDetails">
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h4>Notwendige Cookies</h4>
+                        <p>Erforderlich für den Betrieb der Website. Können nicht deaktiviert werden.</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" checked disabled>
+                        <span class="cookie-slider"></span>
+                    </label>
+                </div>
+                <div class="cookie-category">
+                    <div class="cookie-category-info">
+                        <h4>Marketing &amp; Analyse</h4>
+                        <p>Helfen uns, Werbeanzeigen zu optimieren und die Nutzung der Seite zu verstehen (z.B. Facebook Pixel).</p>
+                    </div>
+                    <label class="cookie-toggle">
+                        <input type="checkbox" id="cookieMarketing">
+                        <span class="cookie-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="cookie-buttons">
+                <button class="cookie-btn cookie-btn-accept" onclick="acceptAllCookies()">Alle akzeptieren</button>
+                <button class="cookie-btn cookie-btn-reject" onclick="rejectOptionalCookies()">Nur notwendige</button>
+                <button class="cookie-btn cookie-btn-settings" onclick="toggleCookieDetails()">Einstellungen</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== Impressum Modal ===== -->
     <div class="modal-overlay" id="impressumModal">
@@ -1328,8 +1559,8 @@
             <h3>7. Hosting</h3>
             <p>Diese Website wird über Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Besuch der Website werden automatisch Serverlogs (IP-Adresse, Browsertyp, Zeitpunkt des Zugriffs) erhoben.</p>
 
-            <h3>8. Cookies</h3>
-            <p>Diese Website verwendet keine Cookies.</p>
+            <h3>8. Cookies und Local Storage</h3>
+            <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage), um Ihre Cookie-Einstellungen zu speichern. Darüber hinaus können bei Ihrer Einwilligung Marketing-Cookies (z.B. Facebook Pixel) gesetzt werden, um unsere Werbeanzeigen zu optimieren. Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button „Cookie-Einstellungen" im Footer erreichbar ist.</p>
         </div>
     </div>
 
@@ -1429,6 +1660,97 @@
                 document.body.style.overflow = '';
             }
         });
+
+        // ===== Cookie-Banner (DSGVO-konform) =====
+        // Cookie-Banner anzeigen, wenn noch keine Einwilligung gespeichert ist
+        (function() {
+            const consent = localStorage.getItem('dw24_cookie_consent');
+            if (!consent) {
+                document.getElementById('cookieBanner').classList.add('active');
+            } else {
+                // Gespeicherte Einwilligung laden und Marketing-Scripts aktivieren
+                const settings = JSON.parse(consent);
+                if (settings.marketing) {
+                    loadMarketingScripts();
+                }
+            }
+        })();
+
+        // Alle Cookies akzeptieren
+        function acceptAllCookies() {
+            const settings = { necessary: true, marketing: true, timestamp: new Date().toISOString() };
+            localStorage.setItem('dw24_cookie_consent', JSON.stringify(settings));
+            document.getElementById('cookieBanner').classList.remove('active');
+            loadMarketingScripts();
+        }
+
+        // Nur notwendige Cookies
+        function rejectOptionalCookies() {
+            const settings = { necessary: true, marketing: false, timestamp: new Date().toISOString() };
+            localStorage.setItem('dw24_cookie_consent', JSON.stringify(settings));
+            document.getElementById('cookieBanner').classList.remove('active');
+        }
+
+        // Benutzerdefinierte Einstellungen speichern
+        function saveCustomCookies() {
+            const marketing = document.getElementById('cookieMarketing').checked;
+            const settings = { necessary: true, marketing: marketing, timestamp: new Date().toISOString() };
+            localStorage.setItem('dw24_cookie_consent', JSON.stringify(settings));
+            document.getElementById('cookieBanner').classList.remove('active');
+            if (marketing) {
+                loadMarketingScripts();
+            }
+        }
+
+        // Cookie-Details ein-/ausblenden
+        function toggleCookieDetails() {
+            const details = document.getElementById('cookieDetails');
+            const isOpen = details.classList.contains('active');
+            details.classList.toggle('active');
+
+            // Wenn Details geöffnet werden, "Einstellungen"-Button zu "Auswahl speichern" ändern
+            const settingsBtn = document.querySelector('.cookie-btn-settings');
+            if (!isOpen) {
+                settingsBtn.textContent = 'Auswahl speichern';
+                settingsBtn.onclick = saveCustomCookies;
+            } else {
+                settingsBtn.textContent = 'Einstellungen';
+                settingsBtn.onclick = toggleCookieDetails;
+            }
+        }
+
+        // Cookie-Banner erneut öffnen (über Footer-Link)
+        function reopenCookieBanner() {
+            // Bestehende Einstellungen in die Toggles laden
+            const consent = localStorage.getItem('dw24_cookie_consent');
+            if (consent) {
+                const settings = JSON.parse(consent);
+                document.getElementById('cookieMarketing').checked = settings.marketing || false;
+            }
+            // Banner mit Details anzeigen
+            document.getElementById('cookieDetails').classList.add('active');
+            document.getElementById('cookieBanner').classList.add('active');
+            const settingsBtn = document.querySelector('.cookie-btn-settings');
+            settingsBtn.textContent = 'Auswahl speichern';
+            settingsBtn.onclick = saveCustomCookies;
+        }
+
+        // Marketing-Scripts laden (Facebook Pixel etc.)
+        // Wird nur aufgerufen wenn Einwilligung vorliegt
+        function loadMarketingScripts() {
+            // Facebook Pixel – Pixel-ID einsetzen sobald verfügbar
+            // if (!window.fbq) {
+            //     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
+            //     n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            //     if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            //     n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+            //     s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
+            //     }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+            //     fbq('init', 'PIXEL_ID');
+            //     fbq('track', 'PageView');
+            // }
+            console.log('Marketing-Cookies akzeptiert – Scripts werden geladen sobald Pixel-ID hinterlegt ist.');
+        }
     </script>
 
 </body>
