@@ -41,30 +41,34 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 - **E-Mail:** Gmail (Entwürfe werden automatisch erstellt, manueller Versand)
 
 ### Live-URLs
-- **Produktion:** https://empfehlung.digitalwerk24.com
+- **Produktion (primär):** https://empfehlung.digitalwerk24.com
+- **Produktion (alias):** https://vertriebspartner.digitalwerk24.com
 - **Vercel-URL:** https://dw24-empfehlung.vercel.app
 - **Vercel-Projekt:** dw24-empfehlung (Team: manuels-projects-733e7153)
 - **Vercel-Projekt-ID:** prj_d8QzZ8MaeVWorFgUlVl4Nx1HKemw
 
 ### DNS-Konfiguration (erledigt ✅)
-In Cloudflare wurde folgender DNS-Eintrag für digitalwerk24.com angelegt:
+In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 | Typ | Name | Ziel | Proxy-Status | TTL |
 |-----|------|------|-------------|-----|
 | CNAME | empfehlung | cname.vercel-dns.com | Nur DNS (graue Wolke) | Auto |
+| CNAME | vertriebspartner | cname.vercel-dns.com | Nur DNS (graue Wolke) | Auto |
 
 **Hinweis:** Vercel empfiehlt optional ein Update des CNAME-Ziels auf `22181005f8ca8e9.vercel-dns-017.com` (IP-Range-Expansion). Der alte Wert funktioniert weiterhin.
 
 ### Vercel-Konfiguration (erledigt ✅)
 1. ✅ Vercel-Projekt erstellt und mit GitHub-Repository verknüpft
 2. ✅ Custom Domain `empfehlung.digitalwerk24.com` hinzugefügt
-3. ✅ SSL-Zertifikat automatisch ausgestellt
-4. ✅ Auto-Deploy bei Push auf `main` aktiv
+3. ✅ Custom Domain `vertriebspartner.digitalwerk24.com` hinzugefügt (03.03.2026)
+4. ✅ SSL-Zertifikate automatisch ausgestellt
+5. ✅ Auto-Deploy bei Push auf `main` aktiv
 
 ### Bestehende DNS-Einträge (digitalwerk24.com)
 - **A-Record:** digitalwerk24.com → 216.198.79.1 (Nur DNS)
 - **CNAME:** www → cname.vercel-dns.com (Nur DNS)
 - **CNAME:** empfehlung → cname.vercel-dns.com (Nur DNS) ✅
+- **CNAME:** vertriebspartner → cname.vercel-dns.com (Nur DNS) ✅
 - **MX-Records:** Google Workspace (aspmx.l.google.com etc.)
 
 ## Backend-System (Google Apps Script + Sheets)
