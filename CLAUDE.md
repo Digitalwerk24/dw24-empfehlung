@@ -28,29 +28,37 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 ## Infrastruktur & Deployment
 
 ### Tech-Stack
-- **Frontend:** HTML/CSS/JS (statische Landingpage) oder Next.js/React
-- **Hosting:** Vercel
-- **Repository:** GitHub (dieses Repo)
+- **Frontend:** Statische HTML/CSS/JS Landingpage (Single-File: index.html)
+- **Hosting:** Vercel (Auto-Deploy bei Push auf main)
+- **Repository:** github.com/Digitalwerk24/dw24-empfehlung
 - **DNS:** Cloudflare
-- **Domain:** empfehlung.digitalwerk24.com
+- **Formular:** Web3Forms (API-Key: 1cd4f93e-337f-4343-b8e1-da153e720dab)
 
-### DNS-Konfiguration (bereits erledigt ✅)
+### Live-URLs
+- **Produktion:** https://empfehlung.digitalwerk24.com
+- **Vercel-URL:** https://dw24-empfehlung.vercel.app
+- **Vercel-Projekt:** dw24-empfehlung (Team: manuels-projects-733e7153)
+- **Vercel-Projekt-ID:** prj_d8QzZ8MaeVWorFgUlVl4Nx1HKemw
+
+### DNS-Konfiguration (erledigt ✅)
 In Cloudflare wurde folgender DNS-Eintrag für digitalwerk24.com angelegt:
 
 | Typ | Name | Ziel | Proxy-Status | TTL |
 |-----|------|------|-------------|-----|
 | CNAME | empfehlung | cname.vercel-dns.com | Nur DNS (graue Wolke) | Auto |
 
-### Vercel-Konfiguration (noch zu erledigen)
-1. Neues Vercel-Projekt erstellen und mit diesem GitHub-Repository verknüpfen
-2. Unter Project Settings → Domains die Custom Domain `empfehlung.digitalwerk24.com` hinzufügen
-3. Vercel erkennt den CNAME automatisch und stellt ein SSL-Zertifikat aus
-4. Nach erfolgreichem Setup ist die Seite unter https://empfehlung.digitalwerk24.com erreichbar
+**Hinweis:** Vercel empfiehlt optional ein Update des CNAME-Ziels auf `22181005f8ca8e9.vercel-dns-017.com` (IP-Range-Expansion). Der alte Wert funktioniert weiterhin.
+
+### Vercel-Konfiguration (erledigt ✅)
+1. ✅ Vercel-Projekt erstellt und mit GitHub-Repository verknüpft
+2. ✅ Custom Domain `empfehlung.digitalwerk24.com` hinzugefügt
+3. ✅ SSL-Zertifikat automatisch ausgestellt
+4. ✅ Auto-Deploy bei Push auf `main` aktiv
 
 ### Bestehende DNS-Einträge (digitalwerk24.com)
 - **A-Record:** digitalwerk24.com → 216.198.79.1 (Nur DNS)
 - **CNAME:** www → cname.vercel-dns.com (Nur DNS)
-- **CNAME:** empfehlung → cname.vercel-dns.com (Nur DNS) ✅ NEU
+- **CNAME:** empfehlung → cname.vercel-dns.com (Nur DNS) ✅
 - **MX-Records:** Google Workspace (aspmx.l.google.com etc.)
 
 ## Anforderungen an die Landingpage
@@ -124,15 +132,39 @@ Formular-Einreichung: E-Mail an hello@digitalwerk24.com senden (oder Webhook/API
 - **E-Mail:** hello@digitalwerk24.com
 - **Hinweis:** B2B-Transaktionen in der EU laufen über Reverse-Charge §13b UStG
 
+## Projektstatus (Stand: 03.03.2026)
+
+### Fertig & Live
+- Komplette Landingpage (index.html) als statische Single-File-Lösung (~1300 Zeilen)
+- Alle Sektionen umgesetzt: Header, Hero (animierter 199€-Betrag), Verdienstrechner (1/5/10 Empfehlungen), 3-Schritte-Prozess, Zielgruppen-Karten, Trust-Badges, Anmeldeformular, FAQ-Akkordeon (7 Fragen), CTAs nach jedem Abschnitt, Footer
+- Impressum & Datenschutz als Modal-Overlays (DSGVO-konform)
+- Anmeldeformular über Web3Forms (AJAX, sendet an hello@digitalwerk24.com)
+- Bot-Schutz über Honeypot-Feld
+- Mobile-First responsive Design
+- Scroll-Animationen via IntersectionObserver (fade-in Effekte)
+- DW24-Logo im Header und Footer eingebunden
+- `noindex, nofollow` Meta-Tag (kein SEO nötig, nur Ads-Traffic)
+- Facebook Pixel Platzhalter-Kommentar im Head vorbereitet
+- GitHub Repository erstellt und Code gepusht
+- Vercel-Projekt erstellt und mit GitHub verknüpft (Auto-Deploy aktiv)
+- Custom Domain empfehlung.digitalwerk24.com konfiguriert und SSL aktiv
+- Seite live erreichbar unter https://empfehlung.digitalwerk24.com
+
+### Offen / TODO
+- **Formular testen:** Testregistrierung durchführen und E-Mail-Empfang prüfen
+- **Mobile-Ansicht testen:** Detaillierter Test auf echtem Smartphone
+- **Facebook Pixel:** Pixel-ID einsetzen sobald Ads-Kampagne erstellt wird
+- **Optional:** CNAME in Cloudflare auf neuen Vercel-Wert aktualisieren (`22181005f8ca8e9.vercel-dns-017.com`)
+
 ## Deployment-Checkliste
 
-- [ ] Landingpage entwickeln (HTML/CSS/JS oder Framework)
-- [ ] Anmeldeformular mit E-Mail-Versand oder Webhook einrichten
-- [ ] Code in dieses GitHub-Repository pushen
-- [ ] Vercel-Projekt erstellen und mit Repo verknüpfen
-- [ ] Custom Domain `empfehlung.digitalwerk24.com` in Vercel hinzufügen
-- [ ] SSL-Zertifikat prüfen (wird von Vercel automatisch ausgestellt)
-- [ ] Impressum & Datenschutz einbinden
-- [ ] Mobile-Ansicht testen
+- [x] Landingpage entwickeln (HTML/CSS/JS)
+- [x] Anmeldeformular mit Web3Forms einrichten
+- [x] Code in GitHub-Repository pushen
+- [x] Vercel-Projekt erstellen und mit Repo verknüpfen
+- [x] Custom Domain `empfehlung.digitalwerk24.com` in Vercel hinzufügen
+- [x] SSL-Zertifikat prüfen (automatisch ausgestellt)
+- [x] Impressum & Datenschutz einbinden (als Modals)
+- [ ] Mobile-Ansicht testen (auf echtem Gerät)
 - [ ] Formular-Funktion testen (Testregistrierung durchführen)
 - [ ] Facebook Pixel / Conversion-Tracking einbauen (für spätere Ads)
