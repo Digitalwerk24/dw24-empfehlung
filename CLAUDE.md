@@ -307,6 +307,7 @@ Felder:
 - DW24-Logo im Header und Footer eingebunden
 - `noindex, nofollow` Meta-Tag (kein SEO nötig, nur Ads-Traffic)
 - Facebook Pixel Platzhalter-Kommentar im Head vorbereitet
+- **Google Analytics:** G-1XWYSG8LLW (im `<head>` eingebunden, trackt beide Domains)
 
 #### Backend (Google Apps Script v3.0)
 - Google Sheets Datenbank mit 5 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten)
@@ -330,7 +331,9 @@ Felder:
 - GitHub Repository erstellt und Code gepusht (github.com/Digitalwerk24/dw24-empfehlung)
 - Vercel-Projekt erstellt und mit GitHub verknüpft (Auto-Deploy aktiv)
 - Custom Domain empfehlung.digitalwerk24.com konfiguriert und SSL aktiv
-- Seite live erreichbar unter https://empfehlung.digitalwerk24.com
+- Custom Domain vertriebspartner.digitalwerk24.com als Alias hinzugefügt (03.03.2026)
+- Seite live erreichbar unter https://empfehlung.digitalwerk24.com und https://vertriebspartner.digitalwerk24.com
+- Google Analytics eingerichtet und verifiziert
 
 ### Offen / TODO
 - **Formular End-to-End testen:** Kompletten Flow durchspielen (Registrierung → DOI → Empfehlung eintragen → Bezahlung markieren → Gmail-Entwurf → Bankdaten-Formular)
@@ -348,8 +351,10 @@ Felder:
 - [x] Code in GitHub-Repository pushen
 - [x] Vercel-Projekt erstellen und mit Repo verknüpfen
 - [x] Custom Domain `empfehlung.digitalwerk24.com` in Vercel hinzufügen
-- [x] SSL-Zertifikat prüfen (automatisch ausgestellt)
+- [x] Custom Domain `vertriebspartner.digitalwerk24.com` als Alias hinzufügen
+- [x] SSL-Zertifikate prüfen (automatisch ausgestellt)
 - [x] Impressum & Datenschutz einbinden (als Modals)
+- [x] Google Analytics einbauen (G-1XWYSG8LLW)
 - [ ] Mobile-Ansicht testen (auf echtem Gerät)
 - [ ] Facebook Pixel / Conversion-Tracking einbauen (für spätere Ads)
 
@@ -385,8 +390,12 @@ Felder:
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
 | Vercel Projekt-ID | `prj_d8QzZ8MaeVWorFgUlVl4Nx1HKemw` |
 | GitHub Repo | `Digitalwerk24/dw24-empfehlung` |
+| Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `b1fdb34` – Google Analytics Tag (G-1XWYSG8LLW) eingebaut (03.03.2026)
+- `6630f8e` – CLAUDE.md: Neue Domain vertriebspartner.digitalwerk24.com dokumentiert (03.03.2026)
+- `26e575f` – CLAUDE.md komplett aktualisiert: Backend-System dokumentiert (03.03.2026)
 - `03b6586` – Auszahlungs-Workflow (v3.0): onEditTrigger, Gmail-Entwurf, Bankdaten-Formular (03.03.2026)
 - Vorherige Commits: DOI-System, Landingpage-Erstellung, Vercel-Deployment
 
