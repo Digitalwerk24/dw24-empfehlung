@@ -1,11 +1,14 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v2.0 mit Double-Opt-In)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v3.0 mit DOI + Auszahlungs-Workflow)
  *
  * Funktionen:
  * - doPost(e): Empfaengt Formulardaten, schreibt Partner ins Sheet, sendet DOI-Mail
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
+ * - onEditTrigger(e): Erkennt Zahlungsdatum in Empfehlungen, erstellt Gmail-Entwurf
+ * - createProvisionDraft(): Erstellt Provisions-Mail als Gmail-Entwurf
+ * - onFormSubmit(e): Uebertraegt Bankdaten aus Google Form ins Partner-Sheet
  * - setupSheets(): Erstellt alle 4 Blaetter mit Headern (einmalig ausfuehren!)
  *
  * DEPLOYMENT:
@@ -13,10 +16,16 @@
  * 2. Ausfuehren als: Ich (hello@digitalwerk24.com)
  * 3. Zugriff: Jeder
  * 4. WICHTIG: Nach Code-Aenderungen immer NEUE Bereitstellung erstellen!
+ *
+ * TRIGGER (manuell einrichten):
+ * - onEditTrigger: Aus Tabelle → Bei Bearbeitung (installierbarer Trigger!)
+ * - onFormSubmit: Aus Tabelle → Beim Absenden des Formulars
  */
 
 // ===== KONFIGURATION =====
 const SHEET_ID = '1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs';
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd9WOmH_foMe6oDW3XcUjpcX3n97x1QoG5qOIFvjYWkFagVUQ/viewform';
+const FORM_ENTRY_EMPFEHLUNGSCODE = '1708813850';
 
 /**
  * POST-Endpoint: Empfaengt Formulardaten und schreibt sie ins Partner-Blatt
@@ -199,7 +208,7 @@ function doGet(e) {
   output.setContent(JSON.stringify({
     status: 'ok',
     service: 'DW24 Empfehlungsprogramm',
-    version: '2.0',
+    version: '3.0',
     timestamp: new Date().toISOString()
   }));
   return output;
@@ -296,6 +305,190 @@ function handleConfirmation(token, email) {
   return HtmlService.createHtmlOutput(errorHtml);
 }
 
+// ============================================================
+// DW24-EP-011: Auszahlungs-Workflow
+// ============================================================
+
+/**
+ * onEdit-Trigger: Erkennt wenn "Kunde bezahlt am" (Spalte L) eingetragen wird
+ * WICHTIG: Muss als INSTALLIERBARER Trigger eingerichtet werden!
+ * → Apps Script → Trigger → Trigger hinzufuegen → onEditTrigger → Bei Bearbeitung
+ */
+function onEditTrigger(e) {
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+
+  // Nur auf Blatt "Empfehlungen", Spalte L (12) reagieren
+  if (sheet.getName() !== 'Empfehlungen' || range.getColumn() !== 12) return;
+
+  // Pruefen ob Wert eingetragen wurde (nicht geloescht)
+  if (!e.value || e.value === '') return;
+
+  var row = range.getRow();
+
+  // Daten aus der Zeile lesen
+  var empfehlungId = sheet.getRange(row, 1).getValue();   // A: Empfehlungs-ID
+  var partnerCode = sheet.getRange(row, 2).getValue();     // B: Empfehlungscode
+  var partnerName = sheet.getRange(row, 3).getValue();     // C: Partner-Name
+  var empfohlenerName = sheet.getRange(row, 4).getValue(); // D: Empfohlener Name
+  var provisionAusgezahlt = sheet.getRange(row, 14).getValue(); // N: bereits ausgezahlt?
+
+  // Nur wenn Provision noch nicht ausgezahlt
+  if (provisionAusgezahlt === 'Ja') return;
+
+  // Spalte M (Provision faellig) auf "Ja" setzen
+  sheet.getRange(row, 13).setValue('Ja');
+
+  // Partner-E-Mail aus Partner-Sheet holen
+  var partnerSheet = e.source.getSheetByName('Partner');
+  var partnerData = partnerSheet.getDataRange().getValues();
+  var partnerEmail = '';
+  var partnerVorname = '';
+
+  for (var i = 1; i < partnerData.length; i++) {
+    if (partnerData[i][5] === partnerCode) { // Spalte F = Empfehlungscode
+      partnerEmail = partnerData[i][3];      // Spalte D = E-Mail
+      partnerVorname = partnerData[i][1];    // Spalte B = Vorname
+      break;
+    }
+  }
+
+  if (!partnerEmail) {
+    Logger.log('DW24: Keine E-Mail gefunden fuer Partner ' + partnerCode);
+    return;
+  }
+
+  // Pruefen ob Partner bereits Bankdaten hinterlegt hat
+  var hatBankdaten = false;
+  for (var i = 1; i < partnerData.length; i++) {
+    if (partnerData[i][5] === partnerCode) {
+      hatBankdaten = (partnerData[i][17] !== '' || partnerData[i][18] !== '');
+      // Spalte R (IBAN) oder S (PayPal)
+      break;
+    }
+  }
+
+  // Gmail-Entwurf erstellen
+  createProvisionDraft(partnerEmail, partnerVorname, partnerCode, empfohlenerName, hatBankdaten);
+
+  // Info-Markierung im Sheet
+  sheet.getRange(row, 15).setNote('Mail-Entwurf erstellt am ' + new Date().toLocaleDateString('de-DE'));
+}
+
+/**
+ * Gmail-Entwurf fuer Provisions-Benachrichtigung erstellen
+ * Manuel prueft und sendet den Entwurf manuell aus Gmail
+ */
+function createProvisionDraft(email, vorname, partnerCode, empfohlenerName, hatBankdaten) {
+
+  var formUrlWithCode = GOOGLE_FORM_URL
+    + '?usp=pp_url&entry.' + FORM_ENTRY_EMPFEHLUNGSCODE + '=' + encodeURIComponent(partnerCode);
+
+  var bankdatenBlock = '';
+  if (!hatBankdaten) {
+    bankdatenBlock = '<div style="background:#FFF8F0;border:2px solid #FF8C00;border-radius:8px;padding:20px;margin:20px 0;">'
+      + '<p style="font-size:16px;font-weight:bold;color:#1A1A2E;margin:0 0 8px;">Bankdaten benoetigt</p>'
+      + '<p style="font-size:14px;color:#333;margin:0 0 16px;">'
+      + 'Damit wir dir die Provision ueberweisen koennen, brauchen wir einmalig '
+      + 'deine Zahlungsdaten. Bitte fuelle das folgende kurze Formular aus:</p>'
+      + '<a href="' + formUrlWithCode + '" '
+      + 'style="background:#FF8C00;color:#fff;padding:12px 24px;border-radius:8px;'
+      + 'text-decoration:none;font-size:14px;font-weight:bold;display:inline-block;">'
+      + 'Bankdaten sicher uebermitteln &rarr;</a>'
+      + '<p style="font-size:12px;color:#666;margin:12px 0 0;">'
+      + 'Deine Daten werden verschluesselt uebertragen und ausschliesslich fuer die '
+      + 'Auszahlung verwendet.</p></div>';
+  } else {
+    bankdatenBlock = '<p style="font-size:14px;color:#065F46;background:#D1FAE5;padding:12px 16px;border-radius:8px;">'
+      + '&#10004; Deine Bankdaten liegen uns bereits vor. Die Auszahlung erfolgt in den '
+      + 'naechsten Werktagen.</p>';
+  }
+
+  var subject = 'Deine 199\u20AC Provision ist faellig! | Digitalwerk24';
+
+  var htmlBody = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">'
+    + '<div style="text-align:center;padding:20px 0;border-bottom:3px solid #FF8C00;">'
+    + '<h1 style="color:#1A1A2E;font-size:24px;margin:0;">Digitalwerk24</h1>'
+    + '<p style="color:#FF8C00;font-size:14px;margin:4px 0 0;">Empfehlungsprogramm</p></div>'
+    + '<div style="padding:30px 0;">'
+    + '<p style="font-size:16px;color:#333;">Hallo ' + vorname + ',</p>'
+    + '<p style="font-size:16px;color:#333;line-height:1.6;">'
+    + 'grossartige Neuigkeiten! Deine Empfehlung <strong>' + empfohlenerName + '</strong> '
+    + 'hat einen Auftrag bei uns abgeschlossen und bezahlt.</p>'
+    + '<div style="background:#1A1A2E;border-radius:8px;padding:24px;text-align:center;margin:20px 0;">'
+    + '<p style="color:#ccc;font-size:14px;margin:0 0 8px;">Deine Provision</p>'
+    + '<p style="color:#FF8C00;font-size:42px;font-weight:bold;margin:0;">199,00 \u20AC</p>'
+    + '<p style="color:#ccc;font-size:12px;margin:8px 0 0;">Empfehlungscode: ' + partnerCode + '</p></div>'
+    + bankdatenBlock
+    + '<p style="font-size:14px;color:#333;line-height:1.6;">'
+    + 'Vielen Dank fuer deine Empfehlung! Weiter so &mdash; fuer jede weitere erfolgreiche '
+    + 'Empfehlung erhaeltst du erneut 199\u20AC.</p></div>'
+    + '<div style="border-top:1px solid #eee;padding:20px 0;font-size:12px;color:#999;">'
+    + '<p>Digitalwerk24 | Revis-1 LLC<br>'
+    + '2645 Executive Park Dr, Weston, FL 33331, USA<br>'
+    + 'hello@digitalwerk24.com</p></div></div>';
+
+  // ENTWURF erstellen (nicht senden!)
+  GmailApp.createDraft(email, subject,
+    'Deine 199 EUR Provision ist faellig! Empfehlung: ' + empfohlenerName,
+    {
+      htmlBody: htmlBody,
+      name: 'Digitalwerk24 Empfehlungsprogramm',
+      replyTo: 'hello@digitalwerk24.com'
+    }
+  );
+
+  Logger.log('DW24: Mail-Entwurf erstellt fuer ' + email + ' (Partner: ' + partnerCode + ')');
+}
+
+/**
+ * Form-Submit-Trigger: Bankdaten aus Google Form ins Partner-Sheet uebernehmen
+ * WICHTIG: Als Trigger einrichten → Aus Tabelle → Beim Absenden des Formulars
+ */
+function onFormSubmit(e) {
+  try {
+    var responses = e.namedValues;
+
+    var partnerCode = responses['Empfehlungscode'][0].trim();
+    var auszahlungsmethode = responses['Auszahlungsmethode'][0];
+    var iban = responses['IBAN'] ? responses['IBAN'][0].trim() : '';
+    var paypal = responses['PayPal E-Mail'] ? responses['PayPal E-Mail'][0].trim() : '';
+    var steuernr = responses['Steuernummer oder USt-ID'] ? responses['Steuernummer oder USt-ID'][0].trim() : '';
+    var adresse = responses['Rechnungsadresse'] ? responses['Rechnungsadresse'][0].trim() : '';
+    var gewerblich = responses['Gewerblich oder Privat?'][0];
+
+    // Partner im Sheet finden und Bankdaten eintragen
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Partner');
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][5] === partnerCode) { // Spalte F = Empfehlungscode
+        sheet.getRange(i + 1, 18).setValue(iban);      // Spalte R: IBAN
+        sheet.getRange(i + 1, 19).setValue(paypal);     // Spalte S: PayPal
+        sheet.getRange(i + 1, 20).setValue(steuernr);   // Spalte T: Steuernr
+
+        // Bestehende Notizen nicht ueberschreiben, sondern ergaenzen
+        var existingNote = data[i][20] || '';
+        var bankInfo = 'Bankdaten erhalten am ' + new Date().toLocaleDateString('de-DE')
+          + ' | ' + gewerblich
+          + ' | ' + auszahlungsmethode
+          + ' | Adresse: ' + adresse;
+        var newNote = existingNote ? existingNote + ' | ' + bankInfo : bankInfo;
+        sheet.getRange(i + 1, 21).setValue(newNote); // Spalte U: Notizen
+
+        Logger.log('DW24: Bankdaten eingetragen fuer ' + partnerCode);
+        break;
+      }
+    }
+  } catch (error) {
+    Logger.log('DW24: Fehler bei Bankdaten-Uebernahme: ' + error.message);
+  }
+}
+
+// ============================================================
+// Setup & Test-Funktionen
+// ============================================================
+
 /**
  * Setup: Erstellt alle 4 Blaetter mit Headern (einmalig ausfuehren!)
  */
@@ -382,4 +575,38 @@ function testDoPost() {
   };
   var result = doPost(testData);
   Logger.log(result.getContent());
+}
+
+/**
+ * Trigger programmatisch einrichten (einmalig ausfuehren!)
+ * Da das Projekt nicht an die Tabelle gebunden ist, muessen Trigger per Code erstellt werden.
+ */
+function setupTriggers() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // Bestehende Trigger dieser Funktionen loeschen (Duplikate vermeiden)
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    var funcName = triggers[i].getHandlerFunction();
+    if (funcName === 'onEditTrigger' || funcName === 'onFormSubmit') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      Logger.log('Bestehenden Trigger geloescht: ' + funcName);
+    }
+  }
+
+  // Trigger 1: onEditTrigger – bei Bearbeitung der Tabelle
+  ScriptApp.newTrigger('onEditTrigger')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  Logger.log('Trigger erstellt: onEditTrigger (bei Bearbeitung)');
+
+  // Trigger 2: onFormSubmit – beim Absenden des Google Forms
+  ScriptApp.newTrigger('onFormSubmit')
+    .forSpreadsheet(ss)
+    .onFormSubmit()
+    .create();
+  Logger.log('Trigger erstellt: onFormSubmit (bei Formularantwort)');
+
+  Logger.log('=== Beide Trigger erfolgreich eingerichtet! ===');
 }
