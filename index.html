@@ -261,15 +261,20 @@
         /* Hero responsive: Auf Mobil zentriert, Overlay stärker */
         @media (max-width: 768px) {
             .hero {
-                min-height: 500px;
+                min-height: auto;
+            }
+
+            .hero-bg img {
+                object-position: 70% center;
             }
 
             .hero-bg::after {
                 background: linear-gradient(
                     to bottom,
-                    rgba(15, 23, 42, 0.75) 0%,
-                    rgba(15, 23, 42, 0.6) 50%,
-                    rgba(15, 23, 42, 0.85) 100%
+                    rgba(15, 23, 42, 0.82) 0%,
+                    rgba(15, 23, 42, 0.72) 40%,
+                    rgba(15, 23, 42, 0.8) 70%,
+                    rgba(15, 23, 42, 0.9) 100%
                 );
             }
 
@@ -279,12 +284,13 @@
             }
 
             .hero-subtitle {
-                margin: 0 auto 36px;
+                margin: 0 auto 28px;
+                font-size: 0.95rem;
             }
 
             .hero .container {
-                padding-top: 60px;
-                padding-bottom: 60px;
+                padding-top: 48px;
+                padding-bottom: 48px;
             }
         }
 
@@ -738,10 +744,6 @@
                 padding: 60px 0;
             }
 
-            .hero {
-                padding: 60px 0 80px;
-            }
-
             .calc-grid {
                 grid-template-columns: 1fr;
                 max-width: 300px;
@@ -790,6 +792,11 @@
 
             .header-badge {
                 display: none;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 12px;
             }
         }
 
