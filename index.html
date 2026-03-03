@@ -141,47 +141,83 @@
 
         /* ===== Hero ===== */
         .hero {
-            background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
             color: var(--white);
-            padding: 80px 0 100px;
-            text-align: center;
+            padding: 0;
             position: relative;
             overflow: hidden;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
         }
 
-        .hero::before {
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hero-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        /* Dunkler Overlay-Gradient: links stark (für Text), rechts sanft (Bild sichtbar) */
+        .hero-bg::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(249, 115, 22, 0.08) 0%, transparent 50%);
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                rgba(15, 23, 42, 0.88) 0%,
+                rgba(15, 23, 42, 0.7) 40%,
+                rgba(15, 23, 42, 0.3) 70%,
+                rgba(15, 23, 42, 0.15) 100%
+            );
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+            padding-bottom: 80px;
+        }
+
+        .hero-content {
+            max-width: 560px;
         }
 
         .hero-label {
             display: inline-block;
-            background: rgba(249, 115, 22, 0.15);
+            background: rgba(249, 115, 22, 0.2);
             color: var(--primary);
             font-size: 0.875rem;
             font-weight: 600;
             padding: 8px 20px;
             border-radius: 50px;
             margin-bottom: 24px;
-            border: 1px solid rgba(249, 115, 22, 0.3);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            backdrop-filter: blur(4px);
         }
 
         .hero h1 {
-            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-size: clamp(2rem, 5vw, 3rem);
             font-weight: 800;
             line-height: 1.15;
             margin-bottom: 20px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
         }
 
         .hero-amount {
             display: block;
-            font-size: clamp(3.5rem, 10vw, 6rem);
+            font-size: clamp(3.5rem, 10vw, 5.5rem);
             font-weight: 900;
             background: var(--gradient);
             -webkit-background-clip: text;
@@ -189,31 +225,64 @@
             background-clip: text;
             line-height: 1;
             margin: 16px 0;
+            filter: drop-shadow(0 2px 10px rgba(249, 115, 22, 0.3));
             animation: pulse-glow 2s ease-in-out infinite;
         }
 
         @keyframes pulse-glow {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.2); }
+            0%, 100% { filter: drop-shadow(0 2px 10px rgba(249, 115, 22, 0.3)); }
+            50% { filter: drop-shadow(0 2px 20px rgba(249, 115, 22, 0.5)); }
         }
 
         .hero-subtitle {
-            font-size: clamp(1rem, 2.5vw, 1.25rem);
-            color: #94A3B8;
-            max-width: 550px;
-            margin: 0 auto 36px;
-            line-height: 1.6;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: #CBD5E1;
+            max-width: 480px;
+            margin: 0 0 36px;
+            line-height: 1.7;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
         }
 
         .hero .cta-button {
-            font-size: 1.25rem;
-            padding: 20px 48px;
+            font-size: 1.2rem;
+            padding: 18px 44px;
         }
 
         .hero-note {
             margin-top: 16px;
             font-size: 0.875rem;
             color: #94A3B8;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hero responsive: Auf Mobil zentriert, Overlay stärker */
+        @media (max-width: 768px) {
+            .hero {
+                min-height: 500px;
+            }
+
+            .hero-bg::after {
+                background: linear-gradient(
+                    to bottom,
+                    rgba(15, 23, 42, 0.75) 0%,
+                    rgba(15, 23, 42, 0.6) 50%,
+                    rgba(15, 23, 42, 0.85) 100%
+                );
+            }
+
+            .hero-content {
+                text-align: center;
+                max-width: 100%;
+            }
+
+            .hero-subtitle {
+                margin: 0 auto 36px;
+            }
+
+            .hero .container {
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
         }
 
         /* ===== Verdienstrechner ===== */
@@ -995,20 +1064,25 @@
 
     <!-- ===== Hero ===== -->
     <section class="hero">
+        <div class="hero-bg">
+            <img src="digitalwerk24-partner.jpeg" alt="Frau am Laptop erhält 199€ Provision – Digitalwerk24 Empfehlungsprogramm" loading="eager">
+        </div>
         <div class="container">
-            <span class="hero-label">Empfehlungsprogramm</span>
-            <h1>
-                Verdiene
-                <span class="hero-amount">199&euro;</span>
-                mit einer einzigen Empfehlung
-            </h1>
-            <p class="hero-subtitle">
-                Empfiehl Digitalwerk24 an einen Handwerker oder Existenzgründer &ndash; und kassiere 199&euro; Provision. So einfach ist das.
-            </p>
-            <a href="#anmelden" class="cta-button">
-                Jetzt Partner werden &#10132;
-            </a>
-            <p class="hero-note">Kostenlos &bull; Keine Verpflichtung &bull; Sofort loslegen</p>
+            <div class="hero-content">
+                <span class="hero-label">Empfehlungsprogramm</span>
+                <h1>
+                    Verdiene
+                    <span class="hero-amount">199&euro;</span>
+                    mit einer einzigen Empfehlung
+                </h1>
+                <p class="hero-subtitle">
+                    Empfiehl Digitalwerk24 an einen Handwerker oder Existenzgründer &ndash; und kassiere 199&euro; Provision. So einfach ist das.
+                </p>
+                <a href="#anmelden" class="cta-button">
+                    Jetzt Partner werden &#10132;
+                </a>
+                <p class="hero-note">Kostenlos &bull; Keine Verpflichtung &bull; Sofort loslegen</p>
+            </div>
         </div>
     </section>
 
