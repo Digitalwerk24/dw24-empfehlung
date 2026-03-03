@@ -127,9 +127,8 @@ Formular-Einreichung: E-Mail an hello@digitalwerk24.com senden (oder Webhook/API
 ## Unternehmensstruktur (für Impressum/Rechtliches)
 
 - **Betreiber:** Revis-1 LLC / Digitalwerk24
-- **Muttergesellschaft:** Earlybirds Advisors INC
 - **Adresse:** 2645 Executive Park Dr, 33331 Weston FL, USA
-- **E-Mail:** hello@digitalwerk24.com
+- **E-Mail:** partner@digitalwerk24.com
 - **Hinweis:** B2B-Transaktionen in der EU laufen über Reverse-Charge §13b UStG
 
 ## Projektstatus (Stand: 03.03.2026)
