@@ -636,6 +636,91 @@
             font-size: 0.95rem;
         }
 
+        /* Partner-Code Box in der Erfolgsmeldung */
+        .partner-code-box {
+            background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+            border: 2px dashed var(--primary);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .partner-code-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .partner-code {
+            display: block;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .copy-code-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .copy-code-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .partner-code-info {
+            margin-top: 20px;
+            text-align: left;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .partner-code-info p {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .partner-code-info p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Fehlermeldung im Formular */
+        .form-error {
+            display: none;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #DC2626;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .form-error.active {
+            display: block;
+        }
+
         /* ===== FAQ ===== */
         .faq-list {
             max-width: 700px;
@@ -1237,6 +1322,7 @@
                     <h3>Kostenlos registrieren</h3>
                     <p class="form-sub">Und sofort deinen Empfehlungscode erhalten</p>
 
+                    <div class="form-error" id="formError"></div>
                     <form id="partnerForm" action="https://api.web3forms.com/submit" method="POST">
                         <!-- Web3Forms Konfiguration -->
                         <input type="hidden" name="access_key" value="1cd4f93e-337f-4343-b8e1-da153e720dab">
@@ -1280,11 +1366,23 @@
                     <p class="form-note">Keine Kosten &bull; Kein Vertrag &bull; Jederzeit kündbar</p>
                 </div>
 
-                <!-- Erfolgsmeldung -->
+                <!-- Erfolgsmeldung mit Empfehlungscode -->
                 <div class="form-success" id="formSuccess">
                     <div class="form-success-icon">&#127881;</div>
                     <h3>Willkommen im Team!</h3>
-                    <p>Deine Anmeldung war erfolgreich. Wir senden dir in Kürze deinen persönlichen Empfehlungscode per E-Mail.</p>
+                    <p>Deine Anmeldung war erfolgreich. Hier ist dein persönlicher Empfehlungscode:</p>
+                    <div class="partner-code-box" id="partnerCodeBox" style="display:none;">
+                        <span class="partner-code-label">Dein Empfehlungscode:</span>
+                        <span class="partner-code" id="partnerCode"></span>
+                        <button class="copy-code-btn" onclick="copyPartnerCode()" title="Code kopieren">
+                            <span id="copyIcon">&#128203;</span>
+                            <span id="copyText">Kopieren</span>
+                        </button>
+                    </div>
+                    <div class="partner-code-info">
+                        <p>&#128232; Den Code erhältst du auch per E-Mail.</p>
+                        <p>&#128161; <strong>So geht's weiter:</strong> Gib diesen Code an Handwerker oder Existenzgründer weiter. Sobald ein Neukunde mit deinem Code bei uns bucht und bezahlt hat, erhältst du <strong>199€ Provision</strong>.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1625,26 +1723,37 @@
                 <li>Vorname und Nachname</li>
                 <li>E-Mail-Adresse</li>
                 <li>Telefonnummer (optional)</li>
+                <li>IP-Adresse (zum Nachweis Ihrer Einwilligung)</li>
+                <li>Zeitstempel der Registrierung</li>
+                <li>Version der Datenschutzerklärung und Teilnahmebedingungen zum Zeitpunkt der Anmeldung</li>
             </ul>
-            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms verwendet.</p>
+            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
 
             <h3>3. Rechtsgrundlage</h3>
-            <p>Die Verarbeitung Ihrer Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) sowie Art. 6 Abs. 1 lit. a DSGVO (Einwilligung).</p>
+            <p>Die Verarbeitung Ihrer Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung des Empfehlungsprogramms) sowie Art. 6 Abs. 1 lit. a DSGVO (Einwilligung). Die Speicherung von IP-Adresse und Zeitstempel der Einwilligung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung zum Nachweis der Einwilligung).</p>
 
-            <h3>4. Datenübermittlung</h3>
-            <p>Ihre Formulardaten werden über den Dienst Web3Forms (web3forms.com) an unsere E-Mail-Adresse übermittelt. Web3Forms verarbeitet die Daten ausschließlich zur Zustellung der Nachricht.</p>
+            <h3>4. Datenübermittlung und Auftragsverarbeitung</h3>
+            <p>Ihre Formulardaten werden über folgende Dienste verarbeitet:</p>
+            <ul>
+                <li><strong>Web3Forms</strong> (web3forms.com): Übermittlung der Formulardaten per E-Mail an uns. Web3Forms verarbeitet die Daten ausschließlich zur Zustellung der Nachricht.</li>
+                <li><strong>Google Workspace / Google Sheets</strong> (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland): Speicherung und Verwaltung Ihrer Partnerdaten zur Abwicklung des Empfehlungsprogramms. Die Verarbeitung erfolgt auf Grundlage der EU-Standardvertragsklauseln. Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Datenschutzerklärung</a>.</li>
+                <li><strong>ipify.org</strong>: Ermittlung Ihrer IP-Adresse zum Nachweis Ihrer Einwilligung. Es werden keine weiteren Daten übermittelt.</li>
+            </ul>
 
             <h3>5. Speicherdauer</h3>
-            <p>Ihre Daten werden solange gespeichert, wie es für die Abwicklung des Empfehlungsprogramms erforderlich ist, oder bis Sie die Löschung verlangen.</p>
+            <p>Ihre Daten werden solange gespeichert, wie es für die Abwicklung des Empfehlungsprogramms erforderlich ist, oder bis Sie die Löschung verlangen. Auszahlungsdaten unterliegen der steuerrechtlichen Aufbewahrungspflicht von 10 Jahren (§147 AO). Consent-Daten (IP-Adresse, Zeitstempel, Version der DSE/TB) werden zur Nachweispflicht gemäß Art. 7 Abs. 1 DSGVO für die Dauer der Geschäftsbeziehung plus 3 Jahre aufbewahrt.</p>
 
             <h3>6. Ihre Rechte</h3>
-            <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Kontaktieren Sie uns dafür unter hello@digitalwerk24.com.</p>
+            <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO), Einschränkung der Verarbeitung (Art. 18 DSGVO) und Datenübertragbarkeit (Art. 20 DSGVO). Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Kontaktieren Sie uns dafür unter partner@digitalwerk24.com.</p>
 
             <h3>7. Hosting</h3>
-            <p>Diese Website wird über Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Besuch der Website werden automatisch Serverlogs (IP-Adresse, Browsertyp, Zeitpunkt des Zugriffs) erhoben.</p>
+            <p>Diese Website wird über Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Besuch der Website werden automatisch Serverlogs (IP-Adresse, Browsertyp, Zeitpunkt des Zugriffs) erhoben. Die Verarbeitung erfolgt auf Grundlage der EU-Standardvertragsklauseln.</p>
 
             <h3>8. Cookies und Local Storage</h3>
             <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage), um Ihre Cookie-Einstellungen zu speichern. Darüber hinaus können bei Ihrer Einwilligung Marketing-Cookies (z.B. Facebook Pixel) gesetzt werden, um unsere Werbeanzeigen zu optimieren. Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button „Cookie-Einstellungen" im Footer erreichbar ist.</p>
+
+            <h3>9. Beschwerderecht</h3>
+            <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt.</p>
         </div>
     </div>
 
@@ -1680,37 +1789,126 @@
             }
         }
 
-        // Formular absenden (Web3Forms mit AJAX)
+        // ===== Formular: Dual-Submit (Web3Forms + Google Apps Script) =====
+        // Apps Script URL – nach Deployment hier eintragen:
+        const APPS_SCRIPT_URL = 'HIER_APPS_SCRIPT_URL_EINFUEGEN';
+
         const form = document.getElementById('partnerForm');
         const submitBtn = document.getElementById('submitBtn');
+        const formError = document.getElementById('formError');
+
+        // IP-Adresse ermitteln (für DSGVO Consent-Logging)
+        let userIP = '';
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(data => { userIP = data.ip; })
+            .catch(() => { userIP = 'nicht ermittelbar'; });
+
+        // Code kopieren Funktion
+        function copyPartnerCode() {
+            const code = document.getElementById('partnerCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                document.getElementById('copyIcon').textContent = '✓';
+                document.getElementById('copyText').textContent = 'Kopiert!';
+                setTimeout(() => {
+                    document.getElementById('copyIcon').textContent = '📋';
+                    document.getElementById('copyText').textContent = 'Kopieren';
+                }, 2000);
+            });
+        }
+
+        // Fehler anzeigen/verstecken
+        function showFormError(msg) {
+            formError.textContent = msg;
+            formError.classList.add('active');
+        }
+        function hideFormError() {
+            formError.classList.remove('active');
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideFormError();
 
             // Button deaktivieren
             submitBtn.disabled = true;
             submitBtn.textContent = 'Wird gesendet...';
 
+            const vorname = document.getElementById('vorname').value.trim();
+            const nachname = document.getElementById('nachname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telefon = document.getElementById('telefon').value.trim();
+
             try {
+                // ---- Schritt 1: Google Apps Script (Partner ins Sheet schreiben) ----
+                let partnerCode = null;
+
+                if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'HIER_APPS_SCRIPT_URL_EINFUEGEN') {
+                    const sheetData = {
+                        vorname: vorname,
+                        nachname: nachname,
+                        email: email,
+                        telefon: telefon,
+                        dse_version: 'v1.0',
+                        tb_version: 'v1.0',
+                        consent_ip: userIP
+                    };
+
+                    const sheetResponse = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(sheetData),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const sheetResult = await sheetResponse.json();
+
+                    if (sheetResult.success) {
+                        partnerCode = sheetResult.empfehlungscode;
+                    } else if (sheetResult.error === 'duplicate') {
+                        showFormError('Diese E-Mail-Adresse ist bereits registriert. Prüfe dein Postfach für deinen Empfehlungscode.');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Jetzt Partner werden ➔';
+                        return;
+                    } else {
+                        // Sheet-Fehler loggen, aber nicht abbrechen
+                        console.warn('Sheet-Fehler:', sheetResult.message);
+                    }
+                }
+
+                // ---- Schritt 2: Web3Forms (E-Mail-Benachrichtigung) ----
                 const formData = new FormData(form);
-                const response = await fetch('https://api.web3forms.com/submit', {
+                // Partner-Code in die E-Mail einfügen, falls vorhanden
+                if (partnerCode) {
+                    formData.append('Empfehlungscode', partnerCode);
+                }
+
+                const emailResponse = await fetch('https://api.web3forms.com/submit', {
                     method: 'POST',
                     body: formData
                 });
 
-                const result = await response.json();
+                const emailResult = await emailResponse.json();
 
-                if (result.success) {
+                if (emailResult.success) {
                     // Formular ausblenden, Erfolgsmeldung zeigen
                     document.getElementById('formContent').style.display = 'none';
+
+                    // Partner-Code anzeigen wenn vorhanden
+                    if (partnerCode) {
+                        document.getElementById('partnerCode').textContent = partnerCode;
+                        document.getElementById('partnerCodeBox').style.display = 'block';
+                    }
+
                     document.getElementById('formSuccess').classList.add('active');
                 } else {
-                    throw new Error('Senden fehlgeschlagen');
+                    throw new Error('E-Mail-Versand fehlgeschlagen');
                 }
+
             } catch (error) {
-                alert('Es gab einen Fehler beim Senden. Bitte schreibe uns direkt an partner@digitalwerk24.com');
+                console.error('Formular-Fehler:', error);
+                showFormError('Es gab einen Fehler beim Senden. Bitte schreibe uns direkt an partner@digitalwerk24.com');
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Jetzt Partner werden \u279E';
+                submitBtn.textContent = 'Jetzt Partner werden ➔';
             }
         });
 
