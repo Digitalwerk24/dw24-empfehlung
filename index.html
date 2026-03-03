@@ -556,11 +556,17 @@
             gap: 12px;
         }
 
+        .form-checkboxes {
+            margin: 20px 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         .form-checkbox {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            margin: 20px 0 24px;
             font-size: 0.85rem;
             color: var(--gray);
         }
@@ -576,6 +582,17 @@
         .form-checkbox a {
             color: var(--primary);
             text-decoration: underline;
+        }
+
+        .form-checkbox.optional {
+            padding-top: 4px;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-checkbox .optional-tag {
+            font-size: 0.75rem;
+            color: var(--gray);
+            font-style: italic;
         }
 
         .form-submit {
@@ -1354,9 +1371,22 @@
                             <input type="tel" id="telefon" name="Telefon" placeholder="+49 123 456789">
                         </div>
 
-                        <div class="form-checkbox">
-                            <input type="checkbox" id="agb" required>
-                            <label for="agb">Ich akzeptiere die <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutzerklärung</a> und die <a href="#" onclick="openModal('teilnahme'); return false;">Teilnahmebedingungen</a> des Empfehlungsprogramms.</label>
+                        <div class="form-checkboxes">
+                            <!-- Checkbox 1: Teilnahmebedingungen (Pflicht) -->
+                            <div class="form-checkbox">
+                                <input type="checkbox" id="consent-tb" required>
+                                <label for="consent-tb">Ich akzeptiere die <a href="#" onclick="openModal('teilnahme'); return false;">Teilnahmebedingungen</a> des Empfehlungsprogramms. *</label>
+                            </div>
+                            <!-- Checkbox 2: Datenschutz-Kenntnisnahme (Pflicht) -->
+                            <div class="form-checkbox">
+                                <input type="checkbox" id="consent-dse" required>
+                                <label for="consent-dse">Ich habe die <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutzerklärung</a> zur Kenntnis genommen. *</label>
+                            </div>
+                            <!-- Checkbox 3: Marketing (Optional – DSGVO Kopplungsverbot Art. 7 Abs. 4) -->
+                            <div class="form-checkbox optional">
+                                <input type="checkbox" id="consent-marketing">
+                                <label for="consent-marketing">Ich möchte per E-Mail über Neuigkeiten und Aktionen des Empfehlungsprogramms informiert werden. <span class="optional-tag">(Optional, jederzeit widerrufbar)</span></label>
+                            </div>
                         </div>
 
                         <button type="submit" class="form-submit" id="submitBtn">
@@ -1366,22 +1396,18 @@
                     <p class="form-note">Keine Kosten &bull; Kein Vertrag &bull; Jederzeit kündbar</p>
                 </div>
 
-                <!-- Erfolgsmeldung mit Empfehlungscode -->
+                <!-- Erfolgsmeldung: DOI-Hinweis (Code erst nach E-Mail-Bestätigung) -->
                 <div class="form-success" id="formSuccess">
-                    <div class="form-success-icon">&#127881;</div>
-                    <h3>Willkommen im Team!</h3>
-                    <p>Deine Anmeldung war erfolgreich. Hier ist dein persönlicher Empfehlungscode:</p>
-                    <div class="partner-code-box" id="partnerCodeBox" style="display:none;">
-                        <span class="partner-code-label">Dein Empfehlungscode:</span>
-                        <span class="partner-code" id="partnerCode"></span>
-                        <button class="copy-code-btn" onclick="copyPartnerCode()" title="Code kopieren">
-                            <span id="copyIcon">&#128203;</span>
-                            <span id="copyText">Kopieren</span>
-                        </button>
-                    </div>
+                    <div class="form-success-icon">&#9989;</div>
+                    <h3 id="successTitle">Fast geschafft!</h3>
+                    <p style="font-size: 1.05rem; line-height: 1.7; margin-bottom: 20px;">
+                        Wir haben dir eine <strong>Bestätigungsmail</strong> geschickt.<br>
+                        <strong style="color: var(--primary);">Klicke den Link in der E-Mail</strong>, um dein Konto zu aktivieren und deinen Empfehlungscode zu erhalten.
+                    </p>
                     <div class="partner-code-info">
-                        <p>&#128232; Den Code erhältst du auch per E-Mail.</p>
-                        <p>&#128161; <strong>So geht's weiter:</strong> Gib diesen Code an Handwerker oder Existenzgründer weiter. Sobald ein Neukunde mit deinem Code bei uns bucht und bezahlt hat, erhältst du <strong>199€ Provision</strong>.</p>
+                        <p>&#128232; Prüfe auch deinen <strong>Spam-Ordner</strong>, falls du keine Mail findest.</p>
+                        <p>&#128274; Erst nach der Bestätigung ist dein Konto aktiv und du erhältst deinen persönlichen Empfehlungscode.</p>
+                        <p>&#128172; Fragen? Schreib uns an <a href="mailto:partner@digitalwerk24.com" style="color: var(--primary);">partner@digitalwerk24.com</a></p>
                     </div>
                 </div>
             </div>
@@ -1714,46 +1740,72 @@
             <p>
                 Revis-1 LLC / Digitalwerk24<br>
                 2645 Executive Park Dr, 33331 Weston FL, USA<br>
-                E-Mail: hello@digitalwerk24.com
+                E-Mail: partner@digitalwerk24.com
             </p>
 
-            <h3>2. Erhebung und Verarbeitung personenbezogener Daten</h3>
+            <h3>2. Vertreter in der EU (Art. 27 DSGVO)</h3>
+            <p>Da der Verantwortliche seinen Sitz außerhalb der EU hat, wird derzeit ein Vertreter gemäß Art. 27 DSGVO bestellt. Die Angaben werden an dieser Stelle ergänzt, sobald die Bestellung abgeschlossen ist. Bis dahin wenden Sie sich bitte direkt an partner@digitalwerk24.com.</p>
+
+            <h3>3. Erhebung und Verarbeitung personenbezogener Daten</h3>
             <p>Wenn Sie sich über unser Anmeldeformular als Empfehlungspartner registrieren, erheben wir folgende Daten:</p>
             <ul>
                 <li>Vorname und Nachname</li>
                 <li>E-Mail-Adresse</li>
                 <li>Telefonnummer (optional)</li>
                 <li>IP-Adresse (zum Nachweis Ihrer Einwilligung)</li>
-                <li>Zeitstempel der Registrierung</li>
+                <li>Zeitstempel der Registrierung und der E-Mail-Bestätigung (Double-Opt-In)</li>
                 <li>Version der Datenschutzerklärung und Teilnahmebedingungen zum Zeitpunkt der Anmeldung</li>
+                <li>Marketing-Einwilligung (ja/nein)</li>
             </ul>
             <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
 
-            <h3>3. Rechtsgrundlage</h3>
-            <p>Die Verarbeitung Ihrer Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung des Empfehlungsprogramms) sowie Art. 6 Abs. 1 lit. a DSGVO (Einwilligung). Die Speicherung von IP-Adresse und Zeitstempel der Einwilligung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung zum Nachweis der Einwilligung).</p>
+            <h3>4. Zwecke und Rechtsgrundlagen</h3>
+            <ul>
+                <li><strong>Registrierung &amp; Kontoverwaltung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
+                <li><strong>Double-Opt-In Bestätigung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung – Aktivierung des Partnerkontos)</li>
+                <li><strong>Provisionsabrechnung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) und Art. 6 Abs. 1 lit. c DSGVO (steuerliche Aufbewahrungspflichten)</li>
+                <li><strong>Marketing-E-Mails</strong> (nur bei gesonderter Einwilligung): Art. 6 Abs. 1 lit. a DSGVO (Einwilligung). Widerruf jederzeit per E-Mail an partner@digitalwerk24.com oder über den Abmeldelink in jeder Marketing-E-Mail.</li>
+                <li><strong>Consent-Dokumentation</strong> (IP, Zeitstempel, Versionen): Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Nachweis der Einwilligung)</li>
+            </ul>
 
-            <h3>4. Datenübermittlung und Auftragsverarbeitung</h3>
+            <h3>5. Double-Opt-In Verfahren</h3>
+            <p>Nach Absenden des Anmeldeformulars erhalten Sie eine E-Mail mit einem Bestätigungslink. Erst nach Klick auf diesen Link wird Ihr Partnerkonto aktiviert und Sie erhalten Ihren persönlichen Empfehlungscode. Dieses Verfahren dient dem Nachweis, dass die Anmeldung tatsächlich vom Inhaber der E-Mail-Adresse vorgenommen wurde. Im Rahmen des Double-Opt-In speichern wir den Zeitpunkt der Bestätigung.</p>
+
+            <h3>6. Datenübermittlung und Auftragsverarbeitung</h3>
             <p>Ihre Formulardaten werden über folgende Dienste verarbeitet:</p>
             <ul>
                 <li><strong>Web3Forms</strong> (web3forms.com): Übermittlung der Formulardaten per E-Mail an uns. Web3Forms verarbeitet die Daten ausschließlich zur Zustellung der Nachricht.</li>
-                <li><strong>Google Workspace / Google Sheets</strong> (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland): Speicherung und Verwaltung Ihrer Partnerdaten zur Abwicklung des Empfehlungsprogramms. Die Verarbeitung erfolgt auf Grundlage der EU-Standardvertragsklauseln. Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Datenschutzerklärung</a>.</li>
+                <li><strong>Google Workspace / Google Sheets / Gmail</strong> (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland): Speicherung und Verwaltung Ihrer Partnerdaten, Versand der Double-Opt-In Bestätigungsmail. Google ist unter dem EU-U.S. Data Privacy Framework (DPF) zertifiziert. Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Datenschutzerklärung</a>.</li>
                 <li><strong>ipify.org</strong>: Ermittlung Ihrer IP-Adresse zum Nachweis Ihrer Einwilligung. Es werden keine weiteren Daten übermittelt.</li>
             </ul>
 
-            <h3>5. Speicherdauer</h3>
-            <p>Ihre Daten werden solange gespeichert, wie es für die Abwicklung des Empfehlungsprogramms erforderlich ist, oder bis Sie die Löschung verlangen. Auszahlungsdaten unterliegen der steuerrechtlichen Aufbewahrungspflicht von 10 Jahren (§147 AO). Consent-Daten (IP-Adresse, Zeitstempel, Version der DSE/TB) werden zur Nachweispflicht gemäß Art. 7 Abs. 1 DSGVO für die Dauer der Geschäftsbeziehung plus 3 Jahre aufbewahrt.</p>
+            <h3>7. Drittlandtransfer</h3>
+            <p>Da der Verantwortliche seinen Sitz in den USA hat, werden Ihre Daten in die USA übertragen. Google LLC ist unter dem EU-U.S. Data Privacy Framework (DPF) zertifiziert. Für Vercel Inc. gelten die EU-Standardvertragsklauseln.</p>
 
-            <h3>6. Ihre Rechte</h3>
-            <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO), Einschränkung der Verarbeitung (Art. 18 DSGVO) und Datenübertragbarkeit (Art. 20 DSGVO). Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Kontaktieren Sie uns dafür unter partner@digitalwerk24.com.</p>
+            <h3>8. Speicherdauer</h3>
+            <p>Ihre Daten werden solange gespeichert, wie es für die Abwicklung des Empfehlungsprogramms erforderlich ist, oder bis Sie die Löschung verlangen. Auszahlungsdaten unterliegen der steuerrechtlichen Aufbewahrungspflicht von 10 Jahren (&sect;147 AO). Consent-Daten (IP-Adresse, Zeitstempel, Version der DSE/TB) werden zur Nachweispflicht gemäß Art. 7 Abs. 1 DSGVO für die Dauer der Geschäftsbeziehung plus 3 Jahre aufbewahrt.</p>
 
-            <h3>7. Hosting</h3>
+            <h3>9. Ihre Rechte</h3>
+            <p>Sie haben folgende Rechte gemäß DSGVO:</p>
+            <ul>
+                <li><strong>Auskunft</strong> (Art. 15 DSGVO): Recht auf Auskunft über die verarbeiteten Daten</li>
+                <li><strong>Berichtigung</strong> (Art. 16 DSGVO): Recht auf Korrektur unrichtiger Daten</li>
+                <li><strong>Löschung</strong> (Art. 17 DSGVO): Recht auf Löschung Ihrer Daten</li>
+                <li><strong>Einschränkung</strong> (Art. 18 DSGVO): Recht auf Einschränkung der Verarbeitung</li>
+                <li><strong>Datenübertragbarkeit</strong> (Art. 20 DSGVO): Recht auf Erhalt Ihrer Daten in maschinenlesbarem Format</li>
+                <li><strong>Widerspruch</strong> (Art. 21 DSGVO): Recht auf Widerspruch gegen die Verarbeitung</li>
+                <li><strong>Widerruf der Einwilligung</strong> (Art. 7 Abs. 3 DSGVO): Recht auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft</li>
+            </ul>
+            <p>Kontaktieren Sie uns für die Ausübung Ihrer Rechte unter partner@digitalwerk24.com.</p>
+
+            <h3>10. Hosting</h3>
             <p>Diese Website wird über Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Besuch der Website werden automatisch Serverlogs (IP-Adresse, Browsertyp, Zeitpunkt des Zugriffs) erhoben. Die Verarbeitung erfolgt auf Grundlage der EU-Standardvertragsklauseln.</p>
 
-            <h3>8. Cookies und Local Storage</h3>
+            <h3>11. Cookies und Local Storage</h3>
             <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage), um Ihre Cookie-Einstellungen zu speichern. Darüber hinaus können bei Ihrer Einwilligung Marketing-Cookies (z.B. Facebook Pixel) gesetzt werden, um unsere Werbeanzeigen zu optimieren. Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button „Cookie-Einstellungen" im Footer erreichbar ist.</p>
 
-            <h3>9. Beschwerderecht</h3>
-            <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt.</p>
+            <h3>12. Beschwerderecht</h3>
+            <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt. Zuständige Aufsichtsbehörde richtet sich nach Ihrem Wohnsitz.</p>
         </div>
     </div>
 
@@ -1797,25 +1849,16 @@
         const submitBtn = document.getElementById('submitBtn');
         const formError = document.getElementById('formError');
 
-        // IP-Adresse ermitteln (für DSGVO Consent-Logging)
+        // Versionen der Rechtsdokumente
+        const DSE_VERSION = 'v1.0';
+        const TB_VERSION = 'v1.0';
+
+        // IP-Adresse ermitteln (fuer DSGVO Consent-Logging)
         let userIP = '';
         fetch('https://api.ipify.org?format=json')
             .then(r => r.json())
             .then(data => { userIP = data.ip; })
             .catch(() => { userIP = 'nicht ermittelbar'; });
-
-        // Code kopieren Funktion
-        function copyPartnerCode() {
-            const code = document.getElementById('partnerCode').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                document.getElementById('copyIcon').textContent = '✓';
-                document.getElementById('copyText').textContent = 'Kopiert!';
-                setTimeout(() => {
-                    document.getElementById('copyIcon').textContent = '📋';
-                    document.getElementById('copyText').textContent = 'Kopieren';
-                }, 2000);
-            });
-        }
 
         // Fehler anzeigen/verstecken
         function showFormError(msg) {
@@ -1830,6 +1873,16 @@
             e.preventDefault();
             hideFormError();
 
+            // Consent-Checkboxen pruefen (TB + DSE sind Pflicht)
+            const consentTB = document.getElementById('consent-tb');
+            const consentDSE = document.getElementById('consent-dse');
+            const consentMarketing = document.getElementById('consent-marketing');
+
+            if (!consentTB.checked || !consentDSE.checked) {
+                showFormError('Bitte akzeptiere die Teilnahmebedingungen und nimm die Datenschutzerklärung zur Kenntnis.');
+                return;
+            }
+
             // Button deaktivieren
             submitBtn.disabled = true;
             submitBtn.textContent = 'Wird gesendet...';
@@ -1840,69 +1893,58 @@
             const telefon = document.getElementById('telefon').value.trim();
 
             try {
-                // ---- Schritt 1: Google Apps Script (Partner ins Sheet schreiben) ----
-                let partnerCode = null;
+                // ---- Schritt 1: Google Apps Script (Partner ins Sheet + DOI-Mail senden) ----
+                const sheetData = {
+                    vorname: vorname,
+                    nachname: nachname,
+                    email: email,
+                    telefon: telefon,
+                    dse_version: DSE_VERSION,
+                    tb_version: TB_VERSION,
+                    consent_ip: userIP,
+                    marketing_consent: consentMarketing.checked
+                };
 
-                if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'HIER_APPS_SCRIPT_URL_EINFUEGEN') {
-                    const sheetData = {
-                        vorname: vorname,
-                        nachname: nachname,
-                        email: email,
-                        telefon: telefon,
-                        dse_version: 'v1.0',
-                        tb_version: 'v1.0',
-                        consent_ip: userIP
-                    };
+                const sheetResponse = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(sheetData),
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-                    const sheetResponse = await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(sheetData),
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+                const sheetResult = await sheetResponse.json();
 
-                    const sheetResult = await sheetResponse.json();
-
-                    if (sheetResult.success) {
-                        partnerCode = sheetResult.empfehlungscode;
-                    } else if (sheetResult.error === 'duplicate') {
-                        showFormError('Diese E-Mail-Adresse ist bereits registriert. Prüfe dein Postfach für deinen Empfehlungscode.');
+                if (!sheetResult.success) {
+                    if (sheetResult.error === 'duplicate') {
+                        showFormError('Diese E-Mail-Adresse ist bereits registriert. Prüfe dein Postfach für deinen Bestätigungslink.');
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Jetzt Partner werden ➔';
                         return;
                     } else {
-                        // Sheet-Fehler loggen, aber nicht abbrechen
                         console.warn('Sheet-Fehler:', sheetResult.message);
                     }
                 }
 
-                // ---- Schritt 2: Web3Forms (E-Mail-Benachrichtigung) ----
+                // ---- Schritt 2: Web3Forms (E-Mail-Benachrichtigung an hello@digitalwerk24.com) ----
                 const formData = new FormData(form);
-                // Partner-Code in die E-Mail einfügen, falls vorhanden
-                if (partnerCode) {
-                    formData.append('Empfehlungscode', partnerCode);
+                if (sheetResult.empfehlungscode) {
+                    formData.append('Empfehlungscode', sheetResult.empfehlungscode);
+                }
+                formData.append('Marketing-Einwilligung', consentMarketing.checked ? 'Ja' : 'Nein');
+
+                try {
+                    await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (emailErr) {
+                    // Web3Forms-Fehler blockieren nicht die Anmeldung
+                    console.warn('Web3Forms-Fehler:', emailErr);
                 }
 
-                const emailResponse = await fetch('https://api.web3forms.com/submit', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const emailResult = await emailResponse.json();
-
-                if (emailResult.success) {
-                    // Formular ausblenden, Erfolgsmeldung zeigen
-                    document.getElementById('formContent').style.display = 'none';
-
-                    // Partner-Code anzeigen wenn vorhanden
-                    if (partnerCode) {
-                        document.getElementById('partnerCode').textContent = partnerCode;
-                        document.getElementById('partnerCodeBox').style.display = 'block';
-                    }
-
-                    document.getElementById('formSuccess').classList.add('active');
-                } else {
-                    throw new Error('E-Mail-Versand fehlgeschlagen');
-                }
+                // ---- Erfolgsseite anzeigen (DOI-Hinweis) ----
+                document.getElementById('formContent').style.display = 'none';
+                document.getElementById('successTitle').textContent = 'Fast geschafft, ' + vorname + '!';
+                document.getElementById('formSuccess').classList.add('active');
 
             } catch (error) {
                 console.error('Formular-Fehler:', error);
