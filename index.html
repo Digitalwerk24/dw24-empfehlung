@@ -1914,10 +1914,11 @@
                     marketing_consent: consentMarketing.checked
                 };
 
+                // Kein Content-Type Header setzen! application/json loest CORS-Preflight aus,
+                // den Google Apps Script nicht unterstuetzt. Der Body wird trotzdem als JSON gelesen.
                 const sheetResponse = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(sheetData),
-                    headers: { 'Content-Type': 'application/json' }
+                    body: JSON.stringify(sheetData)
                 });
 
                 const sheetResult = await sheetResponse.json();
