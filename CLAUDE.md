@@ -353,7 +353,7 @@ Felder:
 - DW24-Logo im Header und Footer eingebunden
 - `noindex, nofollow` Meta-Tag (kein SEO nötig, nur Ads-Traffic)
 - Facebook Pixel Platzhalter-Kommentar im Head vorbereitet
-- **Google Analytics:** G-1XWYSG8LLW (im `<head>` eingebunden, trackt beide Domains)
+- **Google Analytics:** G-1XWYSG8LLW (DSGVO-konform: lädt erst nach Cookie-Einwilligung, Consent Mode v2)
 - **Partner-Login-Button** im Header der Landingpage (verlinkt auf partner.html)
 - **Partner-Login-Link** im Footer der Landingpage
 - **Hinweis auf Partner-Dashboard** in der Registrierungs-Erfolgsseite
@@ -390,6 +390,20 @@ Felder:
 - Installable Triggers aktiv (programmatisch erstellt via `setupTriggers()`)
 - Duplikat-Prüfung bei Registrierung (E-Mail bereits vorhanden)
 
+#### DSGVO-Compliance (04.03.2026)
+- **Google Analytics hinter Cookie-Consent:** GA-Script wird nicht mehr direkt im `<head>` geladen, sondern erst nach aktiver Einwilligung über den Cookie-Banner dynamisch nachgeladen (beide Seiten: index.html + partner.html)
+- **Google Consent Mode v2:** Implementiert mit `ad_storage`, `analytics_storage`, `ad_user_data`, `ad_personalization` – standardmäßig auf `denied`, nach Einwilligung auf `granted`
+- **Datenschutzerklärung Version 2.0:** Komplett überarbeitet mit 15 Abschnitten:
+  - Neuer Abschnitt 10: Art. 21 Widerspruchsrecht mit gesetzlich gefordertem besonderem Hinweis
+  - Neuer Abschnitt 12: Google Analytics (Zweck, Rechtsgrundlage, Empfänger, Speicherdauer, Opt-Out)
+  - Neuer Abschnitt 14: Pflicht/Freiwilligkeit der Datenbereitstellung
+  - Drittlandtransfer (Abschnitt 7) vervollständigt: Cloudflare, Web3Forms, ipify.org ergänzt
+  - Versionierung und Datum am Ende der DSE (Version 2.0, 04.03.2026)
+- **Impressum:** Manuel Horn namentlich als Geschäftsführer benannt (statt nur "Revis-1 LLC")
+- **Teilnahmebedingungen § 10:** Rechtswahl auf deutsches Recht + Gerichtsstand Frankfurt am Main (statt Florida/Broward County)
+- **Cookie-Banner:** Beschreibung aktualisiert – erwähnt jetzt Google Analytics + Facebook Pixel
+- **DSGVO-Report:** `DSGVO-Compliance-Report-empfehlung-digitalwerk24.docx` im Projektordner
+
 #### Deployment & Hosting
 - GitHub Repository erstellt und Code gepusht (github.com/Digitalwerk24/dw24-empfehlung)
 - Vercel-Projekt erstellt und mit GitHub verknüpft (Auto-Deploy aktiv)
@@ -400,6 +414,9 @@ Felder:
 - Google Analytics eingerichtet und verifiziert
 
 ### Offen / TODO
+- **K1 (KRITISCH): EU-Vertreter nach Art. 27 DSGVO bestellen** – Revis-1 LLC als US-Unternehmen braucht zwingend einen EU-Vertreter (Bußgeldrisiko bis 10 Mio. EUR). Empfohlene Anbieter: DataRep (ab ~1.500€/J.), EU-REP.Global (ab ~1.200€/J.) oder deutscher Rechtsanwalt. Danach DSE Abschnitt 2 aktualisieren.
+- **M5: Consent serverseitig dokumentieren** – Cookie-Einwilligung wird nur im localStorage gespeichert. Empfehlung: CMP-Tool wie Cookiebot oder Real Cookie Banner einsetzen.
+- **N1: Telefonnummer im Impressum** – Optional aber empfohlen. Nummer fehlt noch.
 - **End-to-End testen:** Kompletten Flow durchspielen (Registrierung → DOI → Login → Empfehlung eintragen → Auszahlungs-Workflow)
 - **Mobile-Ansicht testen:** Dashboard + Empfehlungsformular auf echtem Smartphone testen
 - **Facebook Pixel:** Pixel-ID einsetzen sobald Ads-Kampagne erstellt wird
@@ -415,6 +432,7 @@ Felder:
 - ✅ Apps Script v4.2 deployed (Version 6, 04.03.2026, 09:52) – Empfehlungsverwaltung im Partner-Dashboard
 - ✅ Apps Script v4.2.1 deployed (Version 7, 04.03.2026, 10:22) – Bugfix: toISOString auf partner[8] statt partner[4] korrigiert
 - ✅ Apps Script v4.3 deployed (Version 8, 04.03.2026, 11:02) – Empfehlungs-Bearbeitung im Partner-Dashboard (handleEditReferral + editReferral-Action)
+- ✅ DSGVO-Compliance-Fixes umgesetzt (04.03.2026) – GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0 mit allen Pflichtangaben, Impressum mit Manuel Horn, Teilnahmebedingungen auf deutsches Recht
 
 ## Deployment-Checkliste
 
@@ -432,6 +450,7 @@ Felder:
 - [x] SSL-Zertifikate prüfen (automatisch ausgestellt)
 - [x] Impressum & Datenschutz einbinden (als Modals)
 - [x] Google Analytics einbauen (G-1XWYSG8LLW)
+- [x] DSGVO-Compliance: GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0, Impressum + TB korrigiert
 - [ ] Mobile-Ansicht testen (auf echtem Gerät)
 - [ ] Facebook Pixel / Conversion-Tracking einbauen (für spätere Ads)
 
@@ -478,6 +497,10 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `9ce9b87` – N3: Rechtswahl und Gerichtsstand auf deutsches Recht umgestellt (04.03.2026)
+- `fcc42a3` – DSGVO-Compliance: GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0 vervollständigt (04.03.2026)
+- `108891e` – Text im Empfehlungsformular angepasst (04.03.2026)
+- `f528a12` – CLAUDE.md aktualisiert: v4.3 Empfehlungs-Bearbeitung dokumentiert (04.03.2026)
 - `3df0323` – v4.3: Empfehlungen bearbeiten – Partner können eingetragene Empfehlungen editieren (04.03.2026)
 - `4d4011b` – Bugfix: Login-Fehler toISOString behoben + neue Web-App URL Version 7 (04.03.2026)
 - `06dd7c3` – Apps Script v4.2 deployed: Web-App URL aktualisiert (04.03.2026)
@@ -503,5 +526,6 @@ Felder:
 - `DW24-Empfehlungsprogramm.xlsx` – Ursprüngliche Excel-Vorlage
 - `DW-24-Logo.png` – Logo-Datei
 - `digitalwerk24-partner.jpeg` – Partner-Bild
+- `DSGVO-Compliance-Report-empfehlung-digitalwerk24.docx` – DSGVO Compliance-Report (Website-Audit)
 - `create_sheets_template.py` – Helper-Script zum Erstellen der Sheets-Vorlage
 - `.gitignore` – Git-Ausschlussliste
