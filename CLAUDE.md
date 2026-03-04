@@ -81,55 +81,62 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 #### Tabellenblätter (5 Stück)
 
-**1. Partner** (Spalten A-J)
+**1. Partner** (Spalten A-U) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
 |--------|--------|
-| A | Registrierungsdatum |
+| A | Partner-ID (z.B. DW24-TEST01) |
 | B | Vorname |
 | C | Nachname |
 | D | E-Mail |
 | E | Telefon |
-| F | Status (Neu / Bestätigt / Aktiv / Inaktiv) |
-| G | Empfehlungscode (z.B. DW24-ANNA01) |
-| H | Anzahl Empfehlungen |
-| I | Erfolgreiche Empfehlungen |
-| J | Gesamtprovision |
+| F | Empfehlungscode (z.B. DW24-ANNA01) |
+| G | Status (Neu / Bestätigt / Aktiv / Inaktiv) |
+| H | Registrierung am |
+| I | Double-Opt-In am |
+| J | DSE-Version |
+| K | TB-Version |
+| L | Consent-IP |
+| M | Anzahl Empfehlungen (Formel: `=ZÄHLENWENN(Empfehlungen!B:B;F2)`) |
+| N | Davon abgeschlossen (Formel: `=ZÄHLENWENNS(Empfehlungen!B:B;F2;Empfehlungen!I:I;"Abgeschlossen")`) |
+| O | Offene Provisionen (Formel: `=ZÄHLENWENNS(...L:L;"Ja";...M:M;"Nein")*199`) |
+| P | Ausgezahlte Provisionen (Formel: `=SUMMENPRODUKT(Auszahlungen!B2:B1000=F2)*E2:E1000)`) |
+| Q | Gesamt-Provisionen (Formel: `=O2+P2`) |
+| R | IBAN |
+| S | PayPal |
+| T | Steuernr./USt-ID |
+| U | Notizen |
 
-**2. Empfehlungen** (Spalten A-T)
+**2. Empfehlungen** (Spalten A-N) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
 |--------|--------|
-| A | Empfehlungsdatum |
-| B | Empfehlungscode |
-| C | Partner-Name (automatisch aus Partner-Sheet) |
-| D | Partner-E-Mail (automatisch) |
-| E | Empfohlener Name |
-| F | Empfohlener Kontakt |
-| G | Branche/Gewerk |
-| H | Status (Offen / Kontaktiert / Angebot / Abgeschlossen / Storniert) |
-| I | Paket (Website 1.490€ / Website+ 1.750€) |
-| J | Notizen |
-| K | Provisionsstatus (Offen / Fällig / Ausgezahlt) |
-| L | Kunde bezahlt am (Datum → löst Auszahlungs-Workflow aus) |
-| M | Provision fällig (automatisch "Ja" bei Datumeintrag in L) |
-| N | Auszahlungsdatum |
-| O | Auszahlungsbetrag |
-| P | Zahlungsreferenz |
-| Q | Gmail-Entwurf erstellt (automatisch "Ja") |
-| R | IBAN (aus Bankdaten-Formular) |
-| S | PayPal (aus Bankdaten-Formular) |
-| T | Steuernr (aus Bankdaten-Formular) |
-
-**3. Auszahlungen** (Spalten A-H)
-| Spalte | Inhalt |
-|--------|--------|
-| A | Auszahlungsdatum |
+| A | Empfehlungs-ID |
 | B | Empfehlungscode |
 | C | Partner-Name |
-| D | Betrag |
-| E | Zahlungsmethode (Überweisung / PayPal) |
-| F | Referenz/Verwendungszweck |
-| G | Status (Ausstehend / Ausgezahlt) |
-| H | Notizen |
+| D | Empfohlener Name |
+| E | Empfohlene E-Mail/Firma |
+| F | Empfohlenes Telefon |
+| G | Branche/Gewerk |
+| H | Empfohlen am |
+| I | Status (Offen / Kontaktiert / Angebot / Abgeschlossen / Storniert) |
+| J | DW24-Auftragsnr. |
+| K | Kunde bezahlt am (Datum → löst Auszahlungs-Workflow aus) |
+| L | Provision fällig (automatisch "Ja" bei Datumeintrag in K) |
+| M | Provision ausgezahlt |
+| N | Notizen |
+
+**3. Auszahlungen** (Spalten A-J) – TATSÄCHLICHES Layout im Sheet
+| Spalte | Inhalt |
+|--------|--------|
+| A | Auszahlungs-ID |
+| B | Empfehlungscode |
+| C | Partner-Name |
+| D | Empfehlungs-ID |
+| E | Betrag (EUR) |
+| F | Auszahlungsdatum |
+| G | Zahlungsmethode (Überweisung / PayPal) |
+| H | Referenz/Buchungsnr. |
+| I | Status (Ausstehend / Ausgezahlt) |
+| J | Notizen |
 
 **4. Dashboard** (Übersichtskennzahlen)
 - Gesamt-Partner, Aktive Partner, Gesamt-Empfehlungen
@@ -363,7 +370,8 @@ Felder:
 
 ### Offen / TODO
 - ~~**Apps Script v4.0 deployen:**~~ ✅ Erledigt (Version 4, 03.03.2026, 20:58)
-- **CORS-Fix verifizieren:** Content-Type Header wurde entfernt (CORS-Preflight-Problem gelöst), Registrierung funktioniert
+- ~~**CORS-Fix verifizieren:**~~ ✅ Erledigt – Content-Type Header entfernt, Registrierung funktioniert
+- ~~**Google Sheets Formeln korrigieren:**~~ ✅ Erledigt – Formeln in Partner-Sheet (Spalten M-Q) hatten zwei Probleme: (1) Komma statt Semikolon als Trennzeichen (deutsche Locale), (2) Falsche Spaltenreferenzen auf Empfehlungen-Sheet (Status=I statt J, Provision fällig=L statt M, Provision ausgezahlt=M statt N)
 - **End-to-End testen:** Kompletten Flow durchspielen inkl. Partner-Dashboard-Login
 - **Mobile-Ansicht testen:** Dashboard auf echtem Smartphone testen
 - **Facebook Pixel:** Pixel-ID einsetzen sobald Ads-Kampagne erstellt wird
