@@ -16,11 +16,12 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 1. Interessent registriert sich über die Landingpage (Name, E-Mail, optional Telefon)
 2. Double-Opt-In: Bestätigungsmail mit Verifizierungslink wird automatisch gesendet
 3. Nach Bestätigung: Digitalwerk24 vergibt einen individuellen Tracking-Code (z.B. DW24-ANNA01)
-4. Partner empfiehlt DW24 an Handwerker/Gründer und gibt den Code weiter
-5. Neukunde nennt den Code bei Kontaktaufnahme/Buchung
-6. Nach Zahlungseingang des Neukunden wird die Provision fällig
-7. Gmail-Entwurf mit Auszahlungs-Info wird automatisch erstellt
-8. 199€ werden innerhalb von 14 Tagen per Überweisung/PayPal ausgezahlt
+4. Partner loggt sich im Dashboard ein (empfehlung.digitalwerk24.com/partner)
+5. Partner empfiehlt DW24 an Handwerker/Gründer und trägt Empfehlung im Dashboard ein
+6. Neukunde nennt den Code bei Kontaktaufnahme/Buchung
+7. Nach Zahlungseingang des Neukunden wird die Provision fällig
+8. Gmail-Entwurf mit Auszahlungs-Info wird automatisch erstellt
+9. 199€ werden innerhalb von 14 Tagen per Überweisung/PayPal ausgezahlt
 
 ### DW24-Preisstruktur (für Kalkulations-Referenz)
 - **1.490€** einmalig – Website + Google Ads Kampagne (Kunde liefert Logo/Bilder)
@@ -31,8 +32,8 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 
 ### Tech-Stack
 - **Frontend:** Statische HTML/CSS/JS (index.html + partner.html)
-- **Backend:** Google Apps Script (standalone Web-App, v4.0)
-- **Datenbank:** Google Sheets (5 Tabellenblätter)
+- **Backend:** Google Apps Script (standalone Web-App, v4.2)
+- **Datenbank:** Google Sheets (6 Tabellenblätter)
 - **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet) + Partner-Dashboard
 - **Hosting:** Vercel (Auto-Deploy bei Push auf main)
 - **Repository:** github.com/Digitalwerk24/dw24-empfehlung
@@ -79,7 +80,7 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - **Sheet-ID:** `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs`
 - **URL:** `https://docs.google.com/spreadsheets/d/1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs`
 
-#### Tabellenblätter (5 Stück)
+#### Tabellenblätter (6 Stück)
 
 **1. Partner** (Spalten A-U) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
@@ -335,7 +336,7 @@ Felder:
 - **E-Mail:** partner@digitalwerk24.com
 - **Hinweis:** B2B-Transaktionen in der EU laufen über Reverse-Charge §13b UStG
 
-## Projektstatus (Stand: 03.03.2026)
+## Projektstatus (Stand: 04.03.2026)
 
 ### Fertig & Live
 
@@ -355,7 +356,7 @@ Felder:
 - **Partner-Login-Link** im Footer der Landingpage
 - **Hinweis auf Partner-Dashboard** in der Registrierungs-Erfolgsseite
 
-#### Partner-Dashboard (NEU – partner.html)
+#### Partner-Dashboard (partner.html)
 - Eigenständige Dashboard-Seite unter `/partner`
 - **Login:** E-Mail-Adresse + Empfehlungscode als Zugangsdaten
 - **DOI-Prüfung:** Login nur möglich nach E-Mail-Bestätigung
@@ -395,14 +396,19 @@ Felder:
 - Google Analytics eingerichtet und verifiziert
 
 ### Offen / TODO
-- ~~**Apps Script v4.0 deployen:**~~ ✅ Erledigt (Version 4, 03.03.2026, 20:58)
-- ~~**CORS-Fix verifizieren:**~~ ✅ Erledigt – Content-Type Header entfernt, Registrierung funktioniert
-- ~~**Google Sheets Formeln korrigieren:**~~ ✅ Erledigt – Formeln in Partner-Sheet (Spalten M-Q) hatten zwei Probleme: (1) Komma statt Semikolon als Trennzeichen (deutsche Locale), (2) Falsche Spaltenreferenzen auf Empfehlungen-Sheet (Status=I statt J, Provision fällig=L statt M, Provision ausgezahlt=M statt N)
-- **End-to-End testen:** Kompletten Flow durchspielen inkl. Partner-Dashboard-Login
-- **Mobile-Ansicht testen:** Dashboard auf echtem Smartphone testen
+- **End-to-End testen:** Kompletten Flow durchspielen (Registrierung → DOI → Login → Empfehlung eintragen → Auszahlungs-Workflow)
+- **Mobile-Ansicht testen:** Dashboard + Empfehlungsformular auf echtem Smartphone testen
 - **Facebook Pixel:** Pixel-ID einsetzen sobald Ads-Kampagne erstellt wird
 - **Testdaten bereinigen:** DW24-TEST01 und DW24-TEST02 aus Partner-Sheet löschen
-- **Optional:** CNAME in Cloudflare auf neuen Vercel-Wert aktualisieren
+- **og:image:** Social-Media-Vorschaubild für empfehlung.digitalwerk24.com erstellen
+- **Optional:** CNAME in Cloudflare auf neuen Vercel-Wert aktualisieren (`22181005f8ca8e9.vercel-dns-017.com`)
+
+### Erledigt (History)
+- ✅ Apps Script v4.0 deployed (Version 4, 03.03.2026, 20:58)
+- ✅ CORS-Fix verifiziert – Content-Type Header entfernt, Registrierung funktioniert
+- ✅ Google Sheets Formeln korrigiert – Semikolon-Trennzeichen + Spaltenreferenzen
+- ✅ Apps Script v4.1 deployed (Version 5, 04.03.2026, 08:51) – Code-vergessen-Funktion
+- ✅ Apps Script v4.2 deployed (Version 6, 04.03.2026, 09:52) – Empfehlungsverwaltung im Partner-Dashboard
 
 ## Deployment-Checkliste
 
@@ -464,16 +470,28 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `06dd7c3` – Apps Script v4.2 deployed: Web-App URL aktualisiert (04.03.2026)
+- `fa585bc` – Empfehlungsverwaltung: Partner können Empfehlungen im Dashboard eintragen (04.03.2026)
+- `8527fc0` – Apps Script v4.1 deployed: Code-vergessen-Funktion + neue Web-App-URL (04.03.2026)
+- `5a43c30` – Code-vergessen-Funktion + neue FAQ auf Landingpage (04.03.2026)
+- `e5206f9` – CLAUDE.md: Spalten-Layout korrigiert, Formel-Fix dokumentiert (03.03.2026)
+- `08f701d` – Apps Script v4.0 deployed – Web-App URL aktualisiert (03.03.2026)
+- `8134154` – Partner-Dashboard: Login-Portal mit Provisionen & Bankdaten (03.03.2026)
+- `e4d91bf` – Fix: CORS-Fehler beim Formular-Submit behoben (03.03.2026)
 - `b1fdb34` – Google Analytics Tag (G-1XWYSG8LLW) eingebaut (03.03.2026)
-- `6630f8e` – CLAUDE.md: Neue Domain vertriebspartner.digitalwerk24.com dokumentiert (03.03.2026)
-- `26e575f` – CLAUDE.md komplett aktualisiert: Backend-System dokumentiert (03.03.2026)
-- `03b6586` – Auszahlungs-Workflow (v3.0): onEditTrigger, Gmail-Entwurf, Bankdaten-Formular (03.03.2026)
-- Vorherige Commits: DOI-System, Landingpage-Erstellung, Vercel-Deployment
+- Vorherige Commits: DOI-System, Landingpage-Erstellung, Vercel-Deployment, DNS-Konfiguration
 
 ### Dateien im Repository
 - `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
-- `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.0)
+- `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten + Empfehlungsverwaltung)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.2)
+- `vercel.json` – Vercel-Konfiguration (Routing für partner.html als /partner)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
 - `DW24-Empfehlungsprogramm-Sheets-Anleitung.md` – Anleitung für die Sheets-Verwaltung
+- `DW24-Empfehlungsprogramm-Ablaufplan.pdf` – Ablaufplan als PDF
+- `DW24-Empfehlungsprogramm.xlsx` – Ursprüngliche Excel-Vorlage
+- `DW-24-Logo.png` – Logo-Datei
+- `digitalwerk24-partner.jpeg` – Partner-Bild
+- `create_sheets_template.py` – Helper-Script zum Erstellen der Sheets-Vorlage
+- `.gitignore` – Git-Ausschlussliste
