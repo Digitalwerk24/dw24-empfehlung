@@ -30,19 +30,21 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 ## Infrastruktur & Deployment
 
 ### Tech-Stack
-- **Frontend:** Statische HTML/CSS/JS Landingpage (Single-File: index.html)
-- **Backend:** Google Apps Script (standalone Web-App, v3.0)
+- **Frontend:** Statische HTML/CSS/JS (index.html + partner.html)
+- **Backend:** Google Apps Script (standalone Web-App, v4.0)
 - **Datenbank:** Google Sheets (5 Tabellenblätter)
-- **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet)
+- **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet) + Partner-Dashboard
 - **Hosting:** Vercel (Auto-Deploy bei Push auf main)
 - **Repository:** github.com/Digitalwerk24/dw24-empfehlung
 - **DNS:** Cloudflare
 - **Anmeldeformular:** Web3Forms (API-Key: 1cd4f93e-337f-4343-b8e1-da153e720dab)
 - **E-Mail:** Gmail (Entwürfe werden automatisch erstellt, manueller Versand)
+- **Partner-Dashboard:** partner.html (Login mit E-Mail + Empfehlungscode)
 
 ### Live-URLs
 - **Produktion (primär):** https://empfehlung.digitalwerk24.com
 - **Produktion (alias):** https://vertriebspartner.digitalwerk24.com
+- **Partner-Dashboard:** https://empfehlung.digitalwerk24.com/partner
 - **Vercel-URL:** https://dw24-empfehlung.vercel.app
 - **Vercel-Projekt:** dw24-empfehlung (Team: manuels-projects-733e7153)
 - **Vercel-Projekt-ID:** prj_d8QzZ8MaeVWorFgUlVl4Nx1HKemw
@@ -137,11 +139,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Wird von Google Forms automatisch befüllt wenn Partner Bankdaten einreichen
 - Verknüpft mit dem Google Formular "Bankdaten für Provisionsauszahlung"
 
-### Google Apps Script – Web-App v3.0
+### Google Apps Script – Web-App v4.0
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
 - **Web-App-URL:** `https://script.google.com/macros/s/AKfycbyHk5k5rTEYL5GbYqkXV58ufhLIWCyWhjOdDdDynA2hWVebf92T6ZMvUj4uKfN0TTCY/exec`
-- **Aktuelle Version:** Version 3 (deployed 03.03.2026, 16:01)
+- **Aktuelle Version:** Version 3 (deployed 03.03.2026, 16:01) → **v4.0 muss noch deployed werden!**
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -150,20 +152,31 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 | Funktion | Zweck | Trigger |
 |----------|-------|---------|
-| `doPost(e)` | Web-App-Endpunkt: Empfängt Registrierungen von der Landingpage, erstellt Partner-Eintrag, sendet DOI-Mail | HTTP POST von index.html |
-| `doGet(e)` | Double-Opt-In: Verarbeitet Bestätigungslinks (?action=confirm&token=...), setzt Status auf "Bestätigt" | HTTP GET (Klick auf DOI-Link) |
-| `generateToken(email)` | Erstellt SHA-256 Token aus E-Mail + Secret für DOI-Verifizierung | Intern |
-| `onEditTrigger(e)` | Auszahlungs-Workflow: Überwacht Spalte L ("Kunde bezahlt am"), setzt Spalte M auf "Ja", erstellt Gmail-Entwurf | Installable Trigger (onEdit) |
-| `createProvisionDraft(...)` | Erstellt Gmail-ENTWURF mit Provisions-Benachrichtigung + Bankdaten-Formular-Link | Von onEditTrigger aufgerufen |
-| `onFormSubmit(e)` | Liest Bankdaten aus Google Form, schreibt IBAN/PayPal/Steuernr in Empfehlungen-Sheet (Spalten R/S/T) | Installable Trigger (onFormSubmit) |
-| `setupTriggers()` | Erstellt beide installable Triggers programmatisch (da standalone Projekt) | Manuell einmalig ausgeführt |
+| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData) | HTTP POST |
+| `handleRegistration(data)` | Partner-Registrierung: Schreibt Partner ins Sheet + sendet DOI-Mail | Von doPost (action=register) |
+| `handleLogin(data)` | **NEU v4.0:** Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen zurück | Von doPost (action=login) |
+| `handleSaveBankData(data)` | **NEU v4.0:** Bankdaten speichern/aktualisieren aus dem Partner-Dashboard | Von doPost (action=saveBankData) |
+| `doGet(e)` | Health-Check + Double-Opt-In Bestätigung | HTTP GET (DOI-Link) |
+| `sendDoubleOptIn(...)` | Sendet Bestätigungsmail mit Verifizierungslink | Von handleRegistration |
+| `handleConfirmation(...)` | Verarbeitet DOI-Bestätigung, zeigt Erfolgsseite mit Code + Dashboard-Link | Von doGet |
+| `onEditTrigger(e)` | Auszahlungs-Workflow: Überwacht Spalte L, erstellt Gmail-Entwurf | Installable Trigger (onEdit) |
+| `createProvisionDraft(...)` | Erstellt Gmail-ENTWURF mit Provisions-Benachrichtigung + Dashboard-/Formular-Link | Von onEditTrigger |
+| `onFormSubmit(e)` | Liest Bankdaten aus Google Form, schreibt in Partner-Sheet (Spalten R/S/T) | Installable Trigger (onFormSubmit) |
+| `setupTriggers()` | Erstellt beide installable Triggers programmatisch | Manuell einmalig |
+
+#### doPost Action-Routing (NEU in v4.0)
+```
+POST /exec
+Body: { "action": "register", "vorname": "...", ... }  → Partner-Registrierung
+Body: { "action": "login", "email": "...", "code": "DW24-..." }  → Partner-Login + Dashboard-Daten
+Body: { "action": "saveBankData", "email": "...", "code": "...", "iban": "...", ... }  → Bankdaten speichern
+```
 
 #### Konstanten im Script
 ```javascript
 const SHEET_ID = '1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs';
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd9WOmH_foMe6oDW3XcUjpcX3n97x1QoG5qOIFvjYWkFagVUQ/viewform';
 const FORM_ENTRY_EMPFEHLUNGSCODE = '1708813850';
-const DOI_SECRET = 'DW24-SECRET-2024';
 ```
 
 #### Installable Triggers (aktiv ✅)
@@ -296,8 +309,8 @@ Felder:
 
 ### Fertig & Live
 
-#### Frontend (Landingpage)
-- Komplette Landingpage (index.html) als statische Single-File-Lösung (~1300 Zeilen)
+#### Frontend (Landingpage + Partner-Dashboard)
+- Komplette Landingpage (index.html) als statische Single-File-Lösung
 - Alle Sektionen umgesetzt: Header, Hero (animierter 199€-Betrag), Verdienstrechner (1/5/10 Empfehlungen), 3-Schritte-Prozess, Zielgruppen-Karten, Trust-Badges, Anmeldeformular, FAQ-Akkordeon (7 Fragen), CTAs nach jedem Abschnitt, Footer
 - Impressum & Datenschutz als Modal-Overlays (DSGVO-konform)
 - Anmeldeformular: Web3Forms (Backup-E-Mail) + Apps Script Web-App (Datenbank + DOI)
@@ -308,22 +321,34 @@ Felder:
 - `noindex, nofollow` Meta-Tag (kein SEO nötig, nur Ads-Traffic)
 - Facebook Pixel Platzhalter-Kommentar im Head vorbereitet
 - **Google Analytics:** G-1XWYSG8LLW (im `<head>` eingebunden, trackt beide Domains)
+- **Partner-Login-Button** im Header der Landingpage (verlinkt auf partner.html)
+- **Partner-Login-Link** im Footer der Landingpage
+- **Hinweis auf Partner-Dashboard** in der Registrierungs-Erfolgsseite
 
-#### Backend (Google Apps Script v3.0)
+#### Partner-Dashboard (NEU – partner.html)
+- Eigenständige Dashboard-Seite unter `/partner`
+- **Login:** E-Mail-Adresse + Empfehlungscode als Zugangsdaten
+- **DOI-Prüfung:** Login nur möglich nach E-Mail-Bestätigung
+- **Statistik-Karten:** Anzahl Empfehlungen, Abgeschlossene, Gesamtprovision, Ausgezahlt
+- **Empfehlungen-Liste:** Alle Empfehlungen mit Status (Neu/Kontaktiert/Angebot/Abgeschlossen/Abgelehnt), Datum, Branche
+- **Bankdaten-Formular:** IBAN/PayPal, BIC, Rechnungsadresse, Steuernummer, Art der Tätigkeit
+- **Bankdaten-Status:** Anzeige ob Bankdaten vorhanden sind oder noch fehlen
+- **Auto-Login:** Session wird via sessionStorage gespeichert (kein erneuter Login bei Seitenaktualisierung)
+- **Code-Kopieren:** Klick auf Empfehlungscode kopiert in Zwischenablage (mit Toast-Benachrichtigung)
+- **XSS-Schutz:** HTML-Escaping bei allen Benutzerdaten
+- Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
+
+#### Backend (Google Apps Script v4.0)
 - Google Sheets Datenbank mit 5 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten)
-- Apps Script v3.0 deployed als Web-App (Version 3, 03.03.2026)
-- Double-Opt-In (DOI) System komplett implementiert:
-  - Automatische Bestätigungsmail bei Registrierung
-  - SHA-256 Token-basierte Verifizierung
-  - Bestätigungsseite mit DW24-Branding
-  - Status-Update von "Neu" → "Bestätigt"
-- Auszahlungs-Workflow (DW24-EP-011) implementiert:
-  - `onEditTrigger`: Überwacht "Kunde bezahlt am"-Spalte
-  - `createProvisionDraft`: Erstellt Gmail-Entwürfe automatisch
-  - Zwei Varianten: mit/ohne Bankdaten (unterschiedliche E-Mail-Texte)
-  - Pre-Fill-Link zum Bankdaten-Formular in E-Mail eingebettet
+- **Apps Script v4.0** mit Action-Routing im doPost-Endpunkt:
+  - `action=register`: Partner-Registrierung + DOI-Mail (wie bisher)
+  - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen + Bankdaten zurück
+  - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern
+- Double-Opt-In (DOI) System komplett implementiert
+- Auszahlungs-Workflow (DW24-EP-011) implementiert
+- Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular
+- DOI-Bestätigungsseite jetzt mit Link zum Partner-Dashboard
 - Google Formular "Bankdaten für Provisionsauszahlung" erstellt und verknüpft
-- `onFormSubmit`: Schreibt Bankdaten automatisch in Empfehlungen-Sheet
 - Installable Triggers aktiv (programmatisch erstellt via `setupTriggers()`)
 - Duplikat-Prüfung bei Registrierung (E-Mail bereits vorhanden)
 
@@ -333,14 +358,17 @@ Felder:
 - Custom Domain empfehlung.digitalwerk24.com konfiguriert und SSL aktiv
 - Custom Domain vertriebspartner.digitalwerk24.com als Alias hinzugefügt (03.03.2026)
 - Seite live erreichbar unter https://empfehlung.digitalwerk24.com und https://vertriebspartner.digitalwerk24.com
+- Partner-Dashboard erreichbar unter https://empfehlung.digitalwerk24.com/partner
 - Google Analytics eingerichtet und verifiziert
 
 ### Offen / TODO
-- **Formular End-to-End testen:** Kompletten Flow durchspielen (Registrierung → DOI → Empfehlung eintragen → Bezahlung markieren → Gmail-Entwurf → Bankdaten-Formular)
-- **Mobile-Ansicht testen:** Detaillierter Test auf echtem Smartphone
+- **⚠️ Apps Script v4.0 deployen:** Lokale Referenzkopie (google-apps-script.gs) ist aktualisiert. Code muss noch in Google Apps Script eingefügt und als NEUE Version (v4) deployed werden!
+- **CORS-Fix verifizieren:** Content-Type Header wurde entfernt (CORS-Preflight-Problem gelöst), Registrierung funktioniert
+- **End-to-End testen:** Kompletten Flow durchspielen inkl. Partner-Dashboard-Login
+- **Mobile-Ansicht testen:** Dashboard auf echtem Smartphone testen
 - **Facebook Pixel:** Pixel-ID einsetzen sobald Ads-Kampagne erstellt wird
 - **Testdaten bereinigen:** DW24-TEST01 und DW24-TEST02 aus Partner-Sheet löschen
-- **Optional:** CNAME in Cloudflare auf neuen Vercel-Wert aktualisieren (`22181005f8ca8e9.vercel-dns-017.com`)
+- **Optional:** CNAME in Cloudflare auf neuen Vercel-Wert aktualisieren
 
 ## Deployment-Checkliste
 
@@ -348,6 +376,9 @@ Felder:
 - [x] Landingpage entwickeln (HTML/CSS/JS)
 - [x] Anmeldeformular mit Web3Forms einrichten
 - [x] DOI-Integration in Formular (AJAX POST an Apps Script)
+- [x] Partner-Dashboard erstellen (partner.html)
+- [x] Partner-Login-Button in Header + Footer der Landingpage
+- [x] Dashboard-Hinweis in Registrierungs-Erfolgsseite
 - [x] Code in GitHub-Repository pushen
 - [x] Vercel-Projekt erstellen und mit Repo verknüpfen
 - [x] Custom Domain `empfehlung.digitalwerk24.com` in Vercel hinzufügen
@@ -363,10 +394,12 @@ Felder:
 - [x] Apps Script v1.0: Basis-Registrierung (doPost)
 - [x] Apps Script v2.0: Double-Opt-In System (doPost + doGet + generateToken)
 - [x] Apps Script v3.0: Auszahlungs-Workflow (onEditTrigger + createProvisionDraft + onFormSubmit)
+- [x] Apps Script v4.0: Partner-Dashboard (handleLogin + handleSaveBankData + Action-Routing)
 - [x] Google Formular "Bankdaten für Provisionsauszahlung" erstellen
 - [x] Formular mit Google Sheet verknüpfen (Formularantworten-Tab)
 - [x] Installable Triggers einrichten (onEdit + onFormSubmit)
 - [x] Version 3 deployen (03.03.2026, 16:01)
+- [ ] **Version 4 deployen (v4.0 mit Partner-Dashboard-Endpunkten)**
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -400,8 +433,9 @@ Felder:
 - Vorherige Commits: DOI-System, Landingpage-Erstellung, Vercel-Deployment
 
 ### Dateien im Repository
-- `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v3.0)
+- `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
+- `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.0)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
 - `DW24-Empfehlungsprogramm-Sheets-Anleitung.md` – Anleitung für die Sheets-Verwaltung

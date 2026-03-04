@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner-Dashboard | Digitalwerk24 Empfehlungsprogramm</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
+    <link rel="apple-touch-icon" href="DW-24-Logo.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1XWYSG8LLW"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1XWYSG8LLW');
+    </script>
+
+    <style>
+        /* ===== CSS Reset & Basis ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F97316;
+            --primary-dark: #EA580C;
+            --primary-light: #FFF7ED;
+            --dark: #1E293B;
+            --gray: #64748B;
+            --gray-light: #94A3B8;
+            --bg: #F8FAFC;
+            --border: #E2E8F0;
+            --white: #FFFFFF;
+            --success: #22C55E;
+            --success-bg: #F0FDF4;
+            --warning: #EAB308;
+            --warning-bg: #FEFCE8;
+            --info: #3B82F6;
+            --info-bg: #EFF6FF;
+            --gradient: linear-gradient(135deg, #F97316, #FB923C);
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--dark);
+            background: var(--bg);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: var(--white);
+            border-bottom: 3px solid var(--primary);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .header-logo img {
+            height: 36px;
+            width: auto;
+        }
+
+        .header-logo-text {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .header-logo-sub {
+            font-size: 0.7rem;
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .partner-name {
+            font-size: 0.875rem;
+            color: var(--gray);
+            display: none;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--gray);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ===== Container ===== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ===== Login-Bereich ===== */
+        .login-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 73px);
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 48px 36px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+
+        .login-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 0.9375rem;
+            color: var(--gray);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: var(--dark);
+            background: var(--bg);
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+        }
+
+        .form-input::placeholder {
+            color: var(--gray-light);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: var(--gradient);
+            color: var(--white);
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-error {
+            display: none;
+            background: #FEF2F2;
+            color: #DC2626;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            margin-top: 16px;
+            text-align: left;
+        }
+
+        .login-help {
+            margin-top: 24px;
+            font-size: 0.8125rem;
+            color: var(--gray-light);
+        }
+
+        .login-help a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .login-help a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== Dashboard ===== */
+        .dashboard {
+            display: none;
+            padding: 32px 0 60px;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        /* Willkommen */
+        .welcome-bar {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .welcome-text p {
+            font-size: 0.875rem;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .code-badge {
+            background: var(--primary-light);
+            border: 2px dashed var(--primary);
+            color: var(--primary);
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            font-size: 1.125rem;
+            padding: 10px 20px;
+            border-radius: 12px;
+            letter-spacing: 2px;
+            user-select: all;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .code-badge:hover::after {
+            content: 'Klicken zum Kopieren';
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--gray);
+            white-space: nowrap;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 0;
+        }
+
+        /* Statistik-Karten */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-value.highlight {
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        /* Empfehlungen-Tabelle */
+        .section-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+
+        .section-card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .referral-list {
+            list-style: none;
+        }
+
+        .referral-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .referral-item:last-child {
+            border-bottom: none;
+        }
+
+        .referral-name {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9375rem;
+        }
+
+        .referral-date {
+            font-size: 0.8125rem;
+            color: var(--gray-light);
+        }
+
+        .referral-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-neu {
+            background: var(--info-bg);
+            color: var(--info);
+        }
+
+        .status-kontaktiert {
+            background: var(--info-bg);
+            color: var(--info);
+        }
+
+        .status-angebot {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .status-abgeschlossen {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .status-abgelehnt {
+            background: #FEF2F2;
+            color: #DC2626;
+        }
+
+        .no-referrals {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--gray);
+        }
+
+        .no-referrals-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .no-referrals p {
+            font-size: 0.9375rem;
+            line-height: 1.6;
+        }
+
+        /* Bankdaten-Bereich */
+        .bank-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9375rem;
+        }
+
+        .bank-status.complete {
+            background: var(--success-bg);
+            color: #166534;
+        }
+
+        .bank-status.missing {
+            background: var(--warning-bg);
+            color: #854D0E;
+        }
+
+        .bank-form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 600px) {
+            .bank-form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .bank-form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: var(--dark);
+            background: var(--bg);
+            transition: border-color 0.2s;
+            font-family: inherit;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 44px;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--white);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: var(--dark);
+            background: var(--bg);
+            transition: border-color 0.2s;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--white);
+        }
+
+        .save-btn {
+            background: var(--gradient);
+            color: var(--white);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .save-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .bank-success {
+            display: none;
+            background: var(--success-bg);
+            color: #166534;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-top: 16px;
+        }
+
+        .bank-error {
+            display: none;
+            background: #FEF2F2;
+            color: #DC2626;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-top: 16px;
+        }
+
+        /* Provisionen-Tabelle */
+        .provision-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .provision-table th {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border);
+            color: var(--gray);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .provision-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--dark);
+        }
+
+        .provision-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .provision-amount {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Loading-Spinner */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248,250,252,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 0.9375rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        /* Kopier-Toast */
+        .copy-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--dark);
+            color: var(--white);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            color: var(--gray-light);
+            text-align: center;
+            padding: 24px 20px;
+            font-size: 0.8125rem;
+        }
+
+        .footer a {
+            color: var(--gray-light);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--primary);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 640px) {
+            .login-card {
+                padding: 36px 24px;
+            }
+
+            .welcome-bar {
+                padding: 20px;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .section-card {
+                padding: 20px;
+            }
+
+            .referral-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .provision-table {
+                font-size: 0.8125rem;
+            }
+
+            .provision-table th,
+            .provision-table td {
+                padding: 8px 6px;
+            }
+
+            .header-logo-text {
+                font-size: 1rem;
+            }
+
+            .partner-name {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="https://empfehlung.digitalwerk24.com" class="header-logo">
+                <img src="DW-24-Logo.png" alt="Digitalwerk24 Logo">
+                <div>
+                    <div class="header-logo-text">Digitalwerk24</div>
+                    <div class="header-logo-sub">PARTNER-DASHBOARD</div>
+                </div>
+            </a>
+            <div class="header-right">
+                <span class="partner-name" id="headerPartnerName"></span>
+                <button class="logout-btn" id="logoutBtn" onclick="logout()">Abmelden</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading-Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Daten werden geladen...</div>
+    </div>
+
+    <!-- Kopier-Toast -->
+    <div class="copy-toast" id="copyToast">Code kopiert!</div>
+
+    <!-- ===== LOGIN-BEREICH ===== -->
+    <section class="login-section" id="loginSection">
+        <div class="login-card">
+            <div class="login-icon">&#128274;</div>
+            <h1 class="login-title">Partner-Login</h1>
+            <p class="login-subtitle">Melde dich mit deiner E-Mail-Adresse und deinem Empfehlungscode an.</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="loginEmail">E-Mail-Adresse</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="deine@email.de" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="loginCode">Empfehlungscode</label>
+                    <input type="text" id="loginCode" class="form-input" placeholder="DW24-XXXX01" required autocomplete="off" style="text-transform: uppercase; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">Anmelden</button>
+            </form>
+
+            <div class="login-error" id="loginError"></div>
+
+            <p class="login-help">
+                Noch kein Partner? <a href="https://empfehlung.digitalwerk24.com#anmeldung">Jetzt registrieren</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="dashboard container" id="dashboardSection">
+
+        <!-- Willkommen -->
+        <div class="welcome-bar">
+            <div class="welcome-text">
+                <h2>Willkommen, <span id="dashVorname"></span>!</h2>
+                <p>Hier siehst du deine Empfehlungen und Provisionen.</p>
+            </div>
+            <div class="code-badge" id="dashCode" onclick="copyCode()" title="Klicken zum Kopieren"></div>
+        </div>
+
+        <!-- Statistiken -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">&#128200;</div>
+                <div class="stat-value" id="statEmpfehlungen">0</div>
+                <div class="stat-label">Empfehlungen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9989;</div>
+                <div class="stat-value" id="statAbgeschlossen">0</div>
+                <div class="stat-label">Abgeschlossen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128176;</div>
+                <div class="stat-value highlight" id="statProvision">0,00 &euro;</div>
+                <div class="stat-label">Gesamtprovision</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128184;</div>
+                <div class="stat-value" id="statAusgezahlt">0,00 &euro;</div>
+                <div class="stat-label">Ausgezahlt</div>
+            </div>
+        </div>
+
+        <!-- Empfehlungen -->
+        <div class="section-card">
+            <h3 class="section-card-title">&#128203; Deine Empfehlungen</h3>
+            <ul class="referral-list" id="referralList">
+                <!-- Wird per JavaScript befuellt -->
+            </ul>
+            <div class="no-referrals" id="noReferrals" style="display: none;">
+                <div class="no-referrals-icon">&#128587;</div>
+                <p>Du hast noch keine Empfehlungen.<br>Gib deinen Code an Handwerker oder Gruender weiter und verdiene <strong style="color: var(--primary);">199&euro; pro Empfehlung</strong>.</p>
+            </div>
+        </div>
+
+        <!-- Bankdaten -->
+        <div class="section-card">
+            <h3 class="section-card-title">&#127974; Bankdaten fuer Auszahlung</h3>
+
+            <div class="bank-status complete" id="bankStatusComplete" style="display: none;">
+                &#10004; Deine Bankdaten liegen uns vor. Auszahlungen werden automatisch veranlasst.
+            </div>
+            <div class="bank-status missing" id="bankStatusMissing" style="display: none;">
+                &#9888;&#65039; Damit wir dir deine Provision auszahlen koennen, hinterlege bitte deine Bankdaten.
+            </div>
+
+            <form id="bankForm" onsubmit="saveBankData(event)">
+                <div class="bank-form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="bankMethode">Bevorzugte Auszahlungsmethode</label>
+                        <select id="bankMethode" class="form-select" required>
+                            <option value="">Bitte waehlen...</option>
+                            <option value="Ueberweisung">Ueberweisung (SEPA)</option>
+                            <option value="PayPal">PayPal</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="ibanGroup">
+                        <label class="form-label" for="bankIban">IBAN</label>
+                        <input type="text" id="bankIban" class="form-input" placeholder="DE89 3704 0044 0532 0130 00" autocomplete="off">
+                    </div>
+
+                    <div class="form-group" id="bicGroup">
+                        <label class="form-label" for="bankBic">BIC/SWIFT (optional)</label>
+                        <input type="text" id="bankBic" class="form-input" placeholder="COBADEFFXXX" autocomplete="off">
+                    </div>
+
+                    <div class="form-group full-width" id="paypalGroup" style="display: none;">
+                        <label class="form-label" for="bankPaypal">PayPal E-Mail-Adresse</label>
+                        <input type="email" id="bankPaypal" class="form-input" placeholder="deine@paypal-email.de" autocomplete="off">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="bankAdresse">Rechnungsadresse</label>
+                        <textarea id="bankAdresse" class="form-textarea" placeholder="Strasse, Nr.&#10;PLZ Ort&#10;Land" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bankSteuer">Steuernummer / USt-IdNr. (optional)</label>
+                        <input type="text" id="bankSteuer" class="form-input" placeholder="z.B. 12/345/67890" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bankArt">Art der Taetigkeit</label>
+                        <select id="bankArt" class="form-select" required>
+                            <option value="">Bitte waehlen...</option>
+                            <option value="Privat">Privat</option>
+                            <option value="Gewerblich">Gewerblich / Freiberuflich</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="save-btn" id="saveBankBtn">Bankdaten speichern</button>
+                </div>
+
+                <div class="bank-success" id="bankSuccess">&#10004; Deine Bankdaten wurden erfolgreich gespeichert.</div>
+                <div class="bank-error" id="bankError"></div>
+            </form>
+        </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Digitalwerk24 | Revis-1 LLC &middot; <a href="mailto:partner@digitalwerk24.com">partner@digitalwerk24.com</a></p>
+    </footer>
+
+    <script>
+        // ===== Konfiguration =====
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHk5k5rTEYL5GbYqkXV58ufhLIWCyWhjOdDdDynA2hWVebf92T6ZMvUj4uKfN0TTCY/exec';
+
+        // Globaler Partner-State
+        let currentPartner = null;
+
+        // ===== Login =====
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const code = document.getElementById('loginCode').value.trim().toUpperCase();
+            const loginBtn = document.getElementById('loginBtn');
+            const loginError = document.getElementById('loginError');
+
+            // Felder validieren
+            if (!email || !code) {
+                showLoginError('Bitte beide Felder ausfuellen.');
+                return;
+            }
+
+            // Code-Format pruefen (DW24-XXXX00)
+            if (!code.startsWith('DW24-')) {
+                showLoginError('Der Empfehlungscode muss mit DW24- beginnen.');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Wird geprueft...';
+            loginError.style.display = 'none';
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        code: code
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentPartner = result.data;
+
+                    // In sessionStorage speichern (fuer Seitenaktualisierung)
+                    sessionStorage.setItem('dw24_partner', JSON.stringify({
+                        email: email,
+                        code: code
+                    }));
+
+                    showDashboard(result.data);
+                } else {
+                    showLoginError(result.message || 'E-Mail oder Code stimmen nicht ueberein.');
+                }
+            } catch (error) {
+                console.error('Login-Fehler:', error);
+                showLoginError('Verbindungsfehler. Bitte versuche es spaeter erneut.');
+            }
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Anmelden';
+        }
+
+        function showLoginError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        // ===== Dashboard anzeigen =====
+        function showDashboard(data) {
+            // Login ausblenden, Dashboard einblenden
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').classList.add('active');
+            document.getElementById('logoutBtn').style.display = 'block';
+
+            // Partner-Name im Header anzeigen (nur Desktop)
+            const nameEl = document.getElementById('headerPartnerName');
+            nameEl.textContent = data.vorname + ' ' + data.nachname;
+            nameEl.style.display = 'inline';
+
+            // Willkommen-Bereich
+            document.getElementById('dashVorname').textContent = data.vorname;
+            document.getElementById('dashCode').textContent = data.empfehlungscode;
+
+            // Statistiken
+            document.getElementById('statEmpfehlungen').textContent = data.anzahlEmpfehlungen || 0;
+            document.getElementById('statAbgeschlossen').textContent = data.abgeschlosseneEmpfehlungen || 0;
+
+            const gesamtProvision = (data.abgeschlosseneEmpfehlungen || 0) * 199;
+            const ausgezahlt = data.ausgezahlt || 0;
+            document.getElementById('statProvision').innerHTML = formatEuro(gesamtProvision);
+            document.getElementById('statAusgezahlt').innerHTML = formatEuro(ausgezahlt);
+
+            // Empfehlungen anzeigen
+            renderReferrals(data.empfehlungen || []);
+
+            // Bankdaten-Status
+            renderBankStatus(data);
+        }
+
+        function formatEuro(amount) {
+            return new Intl.NumberFormat('de-DE', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount);
+        }
+
+        // ===== Empfehlungen rendern =====
+        function renderReferrals(empfehlungen) {
+            const list = document.getElementById('referralList');
+            const noReferrals = document.getElementById('noReferrals');
+
+            if (!empfehlungen || empfehlungen.length === 0) {
+                list.innerHTML = '';
+                noReferrals.style.display = 'block';
+                return;
+            }
+
+            noReferrals.style.display = 'none';
+
+            // Status-Mapping fuer CSS-Klassen
+            const statusClasses = {
+                'Neu': 'status-neu',
+                'Kontaktiert': 'status-kontaktiert',
+                'Angebot gesendet': 'status-angebot',
+                'Abgeschlossen': 'status-abgeschlossen',
+                'Abgelehnt': 'status-abgelehnt'
+            };
+
+            // Status-Icons
+            const statusIcons = {
+                'Neu': '&#128312;',
+                'Kontaktiert': '&#128313;',
+                'Angebot gesendet': '&#128992;',
+                'Abgeschlossen': '&#128994;',
+                'Abgelehnt': '&#128308;'
+            };
+
+            list.innerHTML = empfehlungen.map(emp => {
+                const statusClass = statusClasses[emp.status] || 'status-neu';
+                const statusIcon = statusIcons[emp.status] || '&#128312;';
+                const provision = emp.status === 'Abgeschlossen' ? '<span class="provision-amount">199,00 &euro;</span>' : '<span style="color: var(--gray-light);">ausstehend</span>';
+                const datum = emp.datum ? new Date(emp.datum).toLocaleDateString('de-DE') : '';
+
+                return '<li class="referral-item">'
+                    + '<div>'
+                    + '<div class="referral-name">' + escapeHtml(emp.name || 'Unbenannt') + '</div>'
+                    + '<div class="referral-date">' + (emp.branche ? escapeHtml(emp.branche) + ' &middot; ' : '') + datum + '</div>'
+                    + '</div>'
+                    + '<div style="display: flex; align-items: center; gap: 12px;">'
+                    + '<span class="referral-status ' + statusClass + '">' + statusIcon + ' ' + escapeHtml(emp.status) + '</span>'
+                    + '<div style="min-width: 90px; text-align: right; font-size: 0.875rem;">' + provision + '</div>'
+                    + '</div>'
+                    + '</li>';
+            }).join('');
+        }
+
+        // ===== Bankdaten-Status rendern =====
+        function renderBankStatus(data) {
+            const complete = document.getElementById('bankStatusComplete');
+            const missing = document.getElementById('bankStatusMissing');
+
+            if (data.iban || data.paypal) {
+                // Bankdaten vorhanden – Formular vorausfuellen
+                complete.style.display = 'flex';
+                missing.style.display = 'none';
+
+                if (data.iban) {
+                    document.getElementById('bankMethode').value = 'Ueberweisung';
+                    document.getElementById('bankIban').value = data.iban;
+                    togglePaymentMethod();
+                } else if (data.paypal) {
+                    document.getElementById('bankMethode').value = 'PayPal';
+                    document.getElementById('bankPaypal').value = data.paypal;
+                    togglePaymentMethod();
+                }
+
+                if (data.steuernr) {
+                    document.getElementById('bankSteuer').value = data.steuernr;
+                }
+                if (data.adresse) {
+                    document.getElementById('bankAdresse').value = data.adresse;
+                }
+                if (data.art) {
+                    document.getElementById('bankArt').value = data.art;
+                }
+                if (data.bic) {
+                    document.getElementById('bankBic').value = data.bic;
+                }
+            } else {
+                // Keine Bankdaten – Hinweis anzeigen
+                complete.style.display = 'none';
+                missing.style.display = 'flex';
+            }
+        }
+
+        // ===== Zahlungsmethode umschalten =====
+        document.getElementById('bankMethode').addEventListener('change', togglePaymentMethod);
+
+        function togglePaymentMethod() {
+            const methode = document.getElementById('bankMethode').value;
+            const ibanGroup = document.getElementById('ibanGroup');
+            const bicGroup = document.getElementById('bicGroup');
+            const paypalGroup = document.getElementById('paypalGroup');
+
+            if (methode === 'PayPal') {
+                ibanGroup.style.display = 'none';
+                bicGroup.style.display = 'none';
+                paypalGroup.style.display = 'block';
+            } else {
+                ibanGroup.style.display = 'block';
+                bicGroup.style.display = 'block';
+                paypalGroup.style.display = 'none';
+            }
+        }
+
+        // ===== Bankdaten speichern =====
+        async function saveBankData(e) {
+            e.preventDefault();
+
+            const saveBtn = document.getElementById('saveBankBtn');
+            const bankSuccess = document.getElementById('bankSuccess');
+            const bankError = document.getElementById('bankError');
+
+            bankSuccess.style.display = 'none';
+            bankError.style.display = 'none';
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Wird gespeichert...';
+
+            const credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
+
+            const bankData = {
+                action: 'saveBankData',
+                email: credentials.email,
+                code: credentials.code,
+                methode: document.getElementById('bankMethode').value,
+                iban: document.getElementById('bankIban').value.trim(),
+                bic: document.getElementById('bankBic').value.trim(),
+                paypal: document.getElementById('bankPaypal').value.trim(),
+                adresse: document.getElementById('bankAdresse').value.trim(),
+                steuernr: document.getElementById('bankSteuer').value.trim(),
+                art: document.getElementById('bankArt').value
+            };
+
+            // Validierung: je nach Methode IBAN oder PayPal-E-Mail pruefen
+            if (bankData.methode === 'Ueberweisung' && !bankData.iban) {
+                bankError.textContent = 'Bitte gib deine IBAN ein.';
+                bankError.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Bankdaten speichern';
+                return;
+            }
+            if (bankData.methode === 'PayPal' && !bankData.paypal) {
+                bankError.textContent = 'Bitte gib deine PayPal E-Mail-Adresse ein.';
+                bankError.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Bankdaten speichern';
+                return;
+            }
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(bankData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    bankSuccess.style.display = 'block';
+                    document.getElementById('bankStatusComplete').style.display = 'flex';
+                    document.getElementById('bankStatusMissing').style.display = 'none';
+
+                    // currentPartner aktualisieren
+                    if (bankData.methode === 'Ueberweisung') {
+                        currentPartner.iban = bankData.iban;
+                    } else {
+                        currentPartner.paypal = bankData.paypal;
+                    }
+                } else {
+                    bankError.textContent = result.message || 'Fehler beim Speichern. Bitte versuche es erneut.';
+                    bankError.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Bankdaten-Fehler:', error);
+                bankError.textContent = 'Verbindungsfehler. Bitte versuche es spaeter erneut.';
+                bankError.style.display = 'block';
+            }
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Bankdaten speichern';
+        }
+
+        // ===== Code kopieren =====
+        function copyCode() {
+            const code = document.getElementById('dashCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const toast = document.getElementById('copyToast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+
+        // ===== Logout =====
+        function logout() {
+            sessionStorage.removeItem('dw24_partner');
+            currentPartner = null;
+
+            // Dashboard ausblenden, Login einblenden
+            document.getElementById('dashboardSection').classList.remove('active');
+            document.getElementById('loginSection').style.display = 'flex';
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('headerPartnerName').style.display = 'none';
+
+            // Felder zuruecksetzen
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // ===== HTML escapen (XSS-Schutz) =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===== Auto-Login pruefen (sessionStorage) =====
+        window.addEventListener('DOMContentLoaded', async () => {
+            const saved = sessionStorage.getItem('dw24_partner');
+            if (saved) {
+                const { email, code } = JSON.parse(saved);
+
+                // Loading anzeigen
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.classList.add('active');
+
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'login',
+                            email: email,
+                            code: code
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        currentPartner = result.data;
+                        showDashboard(result.data);
+                    } else {
+                        // Session ungueltig – zurueck zum Login
+                        sessionStorage.removeItem('dw24_partner');
+                    }
+                } catch (error) {
+                    console.error('Auto-Login fehlgeschlagen:', error);
+                    sessionStorage.removeItem('dw24_partner');
+                }
+
+                overlay.classList.remove('active');
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -148,6 +148,39 @@
             letter-spacing: 0.5px;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .partner-login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--white);
+            color: var(--primary);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border: 2px solid var(--primary);
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .partner-login-btn:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .partner-login-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
         /* ===== Hero ===== */
         .hero {
             color: var(--white);
@@ -1179,7 +1212,13 @@
     <header class="header">
         <div class="container">
             <img src="DW-24-Logo.png" alt="Digitalwerk24 Logo" class="header-logo">
-            <span class="header-badge">PARTNERPROGRAMM</span>
+            <div class="header-right">
+                <span class="header-badge">PARTNERPROGRAMM</span>
+                <a href="partner" class="partner-login-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    Partner-Login
+                </a>
+            </div>
         </div>
     </header>
 
@@ -1416,6 +1455,7 @@
                     <div class="partner-code-info">
                         <p>&#128232; Prüfe auch deinen <strong>Spam-Ordner</strong>, falls du keine Mail findest.</p>
                         <p>&#128274; Erst nach der Bestätigung ist dein Konto aktiv und du erhältst deinen persönlichen Empfehlungscode.</p>
+                        <p>&#128200; Nach der Bestätigung kannst du dich im <a href="partner" style="color: var(--primary); font-weight: 600;">Partner-Dashboard</a> einloggen und deine Provisionen verfolgen.</p>
                         <p>&#128172; Fragen? Schreib uns an <a href="mailto:partner@digitalwerk24.com" style="color: var(--primary);">partner@digitalwerk24.com</a></p>
                     </div>
                 </div>
@@ -1528,6 +1568,7 @@
         <div class="container">
             <img src="DW-24-Logo.png" alt="Digitalwerk24" class="footer-logo">
             <div class="footer-links">
+                <a href="partner">Partner-Login</a>
                 <a href="#" onclick="openModal('impressum'); return false;">Impressum</a>
                 <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutz</a>
                 <a href="#" onclick="openModal('teilnahme'); return false;">Teilnahmebedingungen</a>

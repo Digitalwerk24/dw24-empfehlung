@@ -1,11 +1,16 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v3.0 mit DOI + Auszahlungs-Workflow)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.0 mit Partner-Dashboard)
  *
  * Funktionen:
- * - doPost(e): Empfaengt Formulardaten, schreibt Partner ins Sheet, sendet DOI-Mail
+ * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
+ *   → action=register (oder kein action): Partner-Registrierung + DOI-Mail
+ *   → action=login: Partner-Login (E-Mail + Empfehlungscode), liefert Dashboard-Daten
+ *   → action=saveBankData: Bankdaten speichern/aktualisieren
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
+ * - handleLogin(): Validiert Partner-Credentials, gibt Dashboard-Daten zurueck
+ * - handleSaveBankData(): Speichert Bankdaten aus dem Partner-Dashboard
  * - onEditTrigger(e): Erkennt Zahlungsdatum in Empfehlungen, erstellt Gmail-Entwurf
  * - createProvisionDraft(): Erstellt Provisions-Mail als Gmail-Entwurf
  * - onFormSubmit(e): Uebertraegt Bankdaten aus Google Form ins Partner-Sheet
@@ -27,117 +32,363 @@ const SHEET_ID = '1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs';
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd9WOmH_foMe6oDW3XcUjpcX3n97x1QoG5qOIFvjYWkFagVUQ/viewform';
 const FORM_ENTRY_EMPFEHLUNGSCODE = '1708813850';
 
+// ===== HILFSFUNKTION: JSON-Antwort erstellen =====
+function jsonResponse(obj) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setContent(JSON.stringify(obj));
+  return output;
+}
+
 /**
- * POST-Endpoint: Empfaengt Formulardaten und schreibt sie ins Partner-Blatt
+ * POST-Endpoint: Zentrales Routing fuer alle POST-Anfragen
+ * Unterstuetzte Actions: register, login, saveBankData
  */
 function doPost(e) {
   try {
-    var output = ContentService.createTextOutput();
-    output.setMimeType(ContentService.MimeType.JSON);
-
     var data = JSON.parse(e.postData.contents);
 
-    var ss = SpreadsheetApp.openById(SHEET_ID);
-    var sheet = ss.getSheetByName('Partner');
+    // Action-Routing: je nach action-Feld die richtige Funktion aufrufen
+    var action = (data.action || 'register').toLowerCase();
 
-    // Pruefen ob E-Mail bereits existiert (Duplikat-Schutz)
-    var emailColumn = sheet.getRange('D2:D' + Math.max(sheet.getLastRow(), 2)).getValues();
-    for (var i = 0; i < emailColumn.length; i++) {
-      if (emailColumn[i][0].toString().toLowerCase().trim() === data.email.toLowerCase().trim()) {
-        output.setContent(JSON.stringify({
-          success: false,
-          error: 'duplicate',
-          message: 'Diese E-Mail-Adresse ist bereits registriert.'
-        }));
-        return output;
+    switch (action) {
+      case 'login':
+        return handleLogin(data);
+      case 'savebankdata':
+        return handleSaveBankData(data);
+      case 'register':
+      default:
+        return handleRegistration(data);
+    }
+
+  } catch (error) {
+    Logger.log('DW24 doPost Fehler: ' + error.message);
+    return jsonResponse({
+      success: false,
+      error: 'server_error',
+      message: 'Anfrage fehlgeschlagen: ' + error.message
+    });
+  }
+}
+
+// ============================================================
+// ACTION: Partner-Registrierung (bestehende Funktion, refactored)
+// ============================================================
+
+/**
+ * Partner-Registrierung: Schreibt neuen Partner ins Sheet + sendet DOI-Mail
+ */
+function handleRegistration(data) {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Partner');
+
+  // Pruefen ob E-Mail bereits existiert (Duplikat-Schutz)
+  var emailColumn = sheet.getRange('D2:D' + Math.max(sheet.getLastRow(), 2)).getValues();
+  for (var i = 0; i < emailColumn.length; i++) {
+    if (emailColumn[i][0].toString().toLowerCase().trim() === data.email.toLowerCase().trim()) {
+      return jsonResponse({
+        success: false,
+        error: 'duplicate',
+        message: 'Diese E-Mail-Adresse ist bereits registriert.'
+      });
+    }
+  }
+
+  // Partner-ID generieren: DW24-[VORNAME max 4 Zeichen][Laufende Nr]
+  var lastRow = sheet.getLastRow();
+  var vorname = data.vorname.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4);
+  while (vorname.length < 2) {
+    vorname += 'X';
+  }
+  var nr = String(lastRow).padStart(2, '0');
+  var partnerId = 'DW24-' + vorname + nr;
+
+  // Pruefen ob Partner-ID schon existiert, ggf. Nummer erhoehen
+  var idColumn = sheet.getRange('A:A').getValues();
+  var idExists = true;
+  var counter = lastRow;
+  while (idExists) {
+    idExists = false;
+    for (var j = 1; j < idColumn.length; j++) {
+      if (idColumn[j][0] === partnerId) {
+        counter++;
+        nr = String(counter).padStart(2, '0');
+        partnerId = 'DW24-' + vorname + nr;
+        idExists = true;
+        break;
       }
     }
+  }
 
-    // Partner-ID generieren: DW24-[VORNAME max 4 Zeichen][Laufende Nr]
-    var lastRow = sheet.getLastRow();
-    var vorname = data.vorname.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4);
-    while (vorname.length < 2) {
-      vorname += 'X';
+  // DOI-Token generieren
+  var doiToken = Utilities.getUuid();
+
+  // Neue Zeile ins Sheet schreiben
+  sheet.appendRow([
+    partnerId,                        // A: Partner-ID
+    data.vorname,                     // B: Vorname
+    data.nachname,                    // C: Nachname
+    data.email.toLowerCase().trim(),  // D: E-Mail
+    data.telefon || '',               // E: Telefon
+    partnerId,                        // F: Empfehlungscode (= Partner-ID)
+    'Aktiv',                          // G: Status
+    new Date(),                       // H: Registrierung am
+    '',                               // I: Double-Opt-In am (wird nach Bestaetigung gesetzt)
+    data.dse_version || 'v1.0',       // J: DSE-Version
+    data.tb_version || 'v1.0',        // K: TB-Version
+    data.consent_ip || '',            // L: Consent-IP
+    '', '', '', '', '',               // M-Q: Formeln werden unten gesetzt
+    '', '', '',                       // R-T: IBAN, PayPal, Steuernr (leer)
+    'DOI-TOKEN:' + doiToken           // U: Notizen (temporaer fuer DOI-Token)
+  ]);
+
+  // Formeln in die berechneten Spalten der neuen Zeile einfuegen
+  var newRow = sheet.getLastRow();
+  sheet.getRange(newRow, 13).setFormula('=COUNTIF(Empfehlungen!B:B,F' + newRow + ')');
+  sheet.getRange(newRow, 14).setFormula('=COUNTIFS(Empfehlungen!B:B,F' + newRow + ',Empfehlungen!J:J,"Abgeschlossen")');
+  sheet.getRange(newRow, 15).setFormula('=COUNTIFS(Empfehlungen!B:B,F' + newRow + ',Empfehlungen!M:M,"Ja",Empfehlungen!N:N,"Nein")*199');
+  sheet.getRange(newRow, 16).setFormula('=SUMPRODUCT((Auszahlungen!B:B=F' + newRow + ')*Auszahlungen!E:E)');
+  sheet.getRange(newRow, 17).setFormula('=O' + newRow + '+P' + newRow);
+  sheet.getRange(newRow, 15, 1, 3).setNumberFormat('#,##0.00 €');
+
+  // Double-Opt-In E-Mail senden
+  try {
+    sendDoubleOptIn(data.email.toLowerCase().trim(), data.vorname, partnerId, doiToken);
+  } catch (mailError) {
+    Logger.log('DOI-Mail Fehler: ' + mailError.message);
+    // Formular trotzdem als Erfolg melden — Partner kann erneut angefordert werden
+  }
+
+  return jsonResponse({
+    success: true,
+    partnerId: partnerId,
+    empfehlungscode: partnerId,
+    message: 'Registrierung erfolgreich. Bitte E-Mail bestaetigen.'
+  });
+}
+
+// ============================================================
+// ACTION: Partner-Login (NEU in v4.0)
+// ============================================================
+
+/**
+ * Partner-Login: Validiert E-Mail + Empfehlungscode, liefert Dashboard-Daten
+ * Gibt Partner-Infos, Empfehlungen und Bankdaten-Status zurueck
+ */
+function handleLogin(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+
+  if (!email || !code) {
+    return jsonResponse({
+      success: false,
+      message: 'E-Mail und Empfehlungscode sind erforderlich.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var partnerSheet = ss.getSheetByName('Partner');
+  var partnerData = partnerSheet.getDataRange().getValues();
+
+  // Partner suchen: E-Mail (Spalte D, Index 3) + Empfehlungscode (Spalte F, Index 5)
+  var partnerRow = -1;
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+
+    if (rowEmail === email && rowCode === code) {
+      partnerRow = i;
+      break;
     }
-    var nr = String(lastRow).padStart(2, '0');
-    var partnerId = 'DW24-' + vorname + nr;
+  }
 
-    // Pruefen ob Partner-ID schon existiert, ggf. Nummer erhoehen
-    var idColumn = sheet.getRange('A:A').getValues();
-    var idExists = true;
-    var counter = lastRow;
-    while (idExists) {
-      idExists = false;
-      for (var j = 1; j < idColumn.length; j++) {
-        if (idColumn[j][0] === partnerId) {
-          counter++;
-          nr = String(counter).padStart(2, '0');
-          partnerId = 'DW24-' + vorname + nr;
-          idExists = true;
-          break;
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'E-Mail oder Empfehlungscode stimmen nicht ueberein.'
+    });
+  }
+
+  var partner = partnerData[partnerRow];
+
+  // Pruefen ob DOI bestaetigt wurde (Spalte I, Index 8)
+  if (!partner[8] || partner[8] === '') {
+    return jsonResponse({
+      success: false,
+      message: 'Bitte bestaetige zuerst deine E-Mail-Adresse ueber den Link in der Bestaetigungsmail.'
+    });
+  }
+
+  // Empfehlungen des Partners laden
+  var empfehlungen = [];
+  var empSheet = ss.getSheetByName('Empfehlungen');
+  if (empSheet) {
+    var empData = empSheet.getDataRange().getValues();
+    for (var j = 1; j < empData.length; j++) {
+      // Spalte B (Index 1) = Empfehlungscode
+      if (empData[j][1].toString().toUpperCase().trim() === code) {
+        empfehlungen.push({
+          name: empData[j][3] || '',                 // D: Empfohlener Name
+          firma: empData[j][4] || '',                // E: Empfohlene Firma
+          branche: empData[j][7] || '',              // H: Branche/Gewerk
+          datum: empData[j][8] ? empData[j][8].toISOString ? empData[j][8].toISOString() : empData[j][8].toString() : '',  // I: Empfohlen am
+          status: empData[j][9] || 'Neu',            // J: Status
+          provisionFaellig: empData[j][12] || '',    // M: Provision faellig
+          provisionAusgezahlt: empData[j][13] || ''  // N: Provision ausgezahlt
+        });
+      }
+    }
+  }
+
+  // Auszahlungen des Partners laden
+  var ausgezahlt = 0;
+  var auszahlungsSheet = ss.getSheetByName('Auszahlungen');
+  if (auszahlungsSheet) {
+    var ausData = auszahlungsSheet.getDataRange().getValues();
+    for (var k = 1; k < ausData.length; k++) {
+      // Spalte B (Index 1) = Empfehlungscode
+      if (ausData[k][1].toString().toUpperCase().trim() === code) {
+        var betrag = parseFloat(ausData[k][4]) || 0; // Spalte E (Index 4) = Betrag
+        if (ausData[k][8] === 'Bestaetigt' || ausData[k][8] === 'Ausgezahlt') {
+          ausgezahlt += betrag;
         }
       }
     }
-
-    // DOI-Token generieren
-    var doiToken = Utilities.getUuid();
-
-    // Neue Zeile ins Sheet schreiben
-    sheet.appendRow([
-      partnerId,                        // A: Partner-ID
-      data.vorname,                     // B: Vorname
-      data.nachname,                    // C: Nachname
-      data.email.toLowerCase().trim(),  // D: E-Mail
-      data.telefon || '',               // E: Telefon
-      partnerId,                        // F: Empfehlungscode (= Partner-ID)
-      'Aktiv',                          // G: Status
-      new Date(),                       // H: Registrierung am
-      '',                               // I: Double-Opt-In am (wird nach Bestaetigung gesetzt)
-      data.dse_version || 'v1.0',       // J: DSE-Version
-      data.tb_version || 'v1.0',        // K: TB-Version
-      data.consent_ip || '',            // L: Consent-IP
-      '', '', '', '', '',               // M-Q: Formeln werden unten gesetzt
-      '', '', '',                       // R-T: IBAN, PayPal, Steuernr (leer)
-      'DOI-TOKEN:' + doiToken           // U: Notizen (temporaer fuer DOI-Token)
-    ]);
-
-    // Formeln in die berechneten Spalten der neuen Zeile einfuegen
-    var newRow = sheet.getLastRow();
-    sheet.getRange(newRow, 13).setFormula('=COUNTIF(Empfehlungen!B:B,F' + newRow + ')');
-    sheet.getRange(newRow, 14).setFormula('=COUNTIFS(Empfehlungen!B:B,F' + newRow + ',Empfehlungen!J:J,"Abgeschlossen")');
-    sheet.getRange(newRow, 15).setFormula('=COUNTIFS(Empfehlungen!B:B,F' + newRow + ',Empfehlungen!M:M,"Ja",Empfehlungen!N:N,"Nein")*199');
-    sheet.getRange(newRow, 16).setFormula('=SUMPRODUCT((Auszahlungen!B:B=F' + newRow + ')*Auszahlungen!E:E)');
-    sheet.getRange(newRow, 17).setFormula('=O' + newRow + '+P' + newRow);
-    sheet.getRange(newRow, 15, 1, 3).setNumberFormat('#,##0.00 €');
-
-    // Double-Opt-In E-Mail senden
-    try {
-      sendDoubleOptIn(data.email.toLowerCase().trim(), data.vorname, partnerId, doiToken);
-    } catch (mailError) {
-      Logger.log('DOI-Mail Fehler: ' + mailError.message);
-      // Formular trotzdem als Erfolg melden — Partner kann erneut angefordert werden
-    }
-
-    output.setContent(JSON.stringify({
-      success: true,
-      partnerId: partnerId,
-      empfehlungscode: partnerId,
-      message: 'Registrierung erfolgreich. Bitte E-Mail bestaetigen.'
-    }));
-    return output;
-
-  } catch (error) {
-    Logger.log('Fehler bei Partner-Registrierung: ' + error.message);
-    var errorOutput = ContentService.createTextOutput();
-    errorOutput.setMimeType(ContentService.MimeType.JSON);
-    errorOutput.setContent(JSON.stringify({
-      success: false,
-      error: 'server_error',
-      message: 'Registrierung fehlgeschlagen: ' + error.message
-    }));
-    return errorOutput;
   }
+
+  // Notizen parsen fuer Adresse und Art
+  var notizen = partner[20] || '';
+  var adresse = '';
+  var art = '';
+  var bic = '';
+
+  // Adresse, Art und BIC aus Notizen extrahieren (Format: "key: value")
+  var adresseMatch = notizen.match(/Adresse:\s*([^|]+)/);
+  if (adresseMatch) adresse = adresseMatch[1].trim();
+  var artMatch = notizen.match(/(Privat|Gewerblich)/i);
+  if (artMatch) art = artMatch[1];
+  var bicMatch = notizen.match(/BIC:\s*([^\s|]+)/);
+  if (bicMatch) bic = bicMatch[1].trim();
+
+  // Antwort mit allen Dashboard-Daten
+  return jsonResponse({
+    success: true,
+    data: {
+      vorname: partner[1],                          // B: Vorname
+      nachname: partner[2],                         // C: Nachname
+      email: partner[3],                            // D: E-Mail
+      telefon: partner[4],                          // E: Telefon
+      empfehlungscode: partner[5],                  // F: Empfehlungscode
+      status: partner[6],                           // G: Status
+      registriertAm: partner[7] ? partner[7].toISOString ? partner[7].toISOString() : partner[7].toString() : '',
+      doiAm: partner[8] ? partner[8].toISOString ? partner[8].toISOString() : partner[8].toString() : '',
+      anzahlEmpfehlungen: parseInt(partner[12]) || 0,   // M: Anzahl Empfehlungen
+      abgeschlosseneEmpfehlungen: parseInt(partner[13]) || 0, // N: Davon abgeschlossen
+      iban: partner[17] || '',                      // R: IBAN
+      paypal: partner[18] || '',                    // S: PayPal
+      steuernr: partner[19] || '',                  // T: Steuernr
+      bic: bic,
+      adresse: adresse,
+      art: art,
+      ausgezahlt: ausgezahlt,
+      empfehlungen: empfehlungen
+    }
+  });
 }
+
+// ============================================================
+// ACTION: Bankdaten speichern (NEU in v4.0)
+// ============================================================
+
+/**
+ * Bankdaten speichern/aktualisieren: Wird vom Partner-Dashboard aufgerufen
+ * Validiert Partner zuerst per E-Mail + Code, dann speichert Bankdaten
+ */
+function handleSaveBankData(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+
+  if (!email || !code) {
+    return jsonResponse({
+      success: false,
+      message: 'Authentifizierung fehlgeschlagen.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Partner');
+  var partnerData = sheet.getDataRange().getValues();
+
+  // Partner finden und validieren
+  var partnerRow = -1;
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+
+    if (rowEmail === email && rowCode === code) {
+      partnerRow = i;
+      break;
+    }
+  }
+
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Partner nicht gefunden oder Zugangsdaten ungueltig.'
+    });
+  }
+
+  // Bankdaten in die entsprechenden Spalten schreiben
+  var iban = (data.iban || '').trim();
+  var paypal = (data.paypal || '').trim();
+  var steuernr = (data.steuernr || '').trim();
+  var methode = data.methode || '';
+  var adresse = (data.adresse || '').trim();
+  var art = data.art || '';
+  var bic = (data.bic || '').trim();
+
+  // IBAN oder PayPal je nach Methode setzen
+  if (methode === 'Ueberweisung') {
+    sheet.getRange(partnerRow + 1, 18).setValue(iban);     // Spalte R: IBAN
+    // PayPal nicht loeschen falls vorhanden
+  } else if (methode === 'PayPal') {
+    sheet.getRange(partnerRow + 1, 19).setValue(paypal);   // Spalte S: PayPal
+    // IBAN nicht loeschen falls vorhanden
+  }
+
+  // Steuernummer aktualisieren
+  if (steuernr) {
+    sheet.getRange(partnerRow + 1, 20).setValue(steuernr); // Spalte T: Steuernr
+  }
+
+  // Notizen aktualisieren (Bankdaten-Infos anhaengen)
+  var bankInfo = 'Bankdaten via Dashboard aktualisiert am ' + new Date().toLocaleDateString('de-DE')
+    + ' | Methode: ' + methode
+    + ' | ' + art
+    + ' | Adresse: ' + adresse;
+  if (bic) bankInfo += ' | BIC: ' + bic;
+
+  var existingNote = partnerData[partnerRow][20] || '';
+  // DOI-Vermerk beibehalten, Bankdaten-Infos ersetzen/anhaengen
+  var doiPart = '';
+  if (existingNote.indexOf('DOI bestaetigt') > -1) {
+    var doiMatch = existingNote.match(/(DOI bestaetigt[^|]*)/);
+    if (doiMatch) doiPart = doiMatch[1].trim();
+  }
+  var newNote = doiPart ? doiPart + ' | ' + bankInfo : bankInfo;
+  sheet.getRange(partnerRow + 1, 21).setValue(newNote); // Spalte U: Notizen
+
+  Logger.log('DW24: Bankdaten via Dashboard aktualisiert fuer ' + code);
+
+  return jsonResponse({
+    success: true,
+    message: 'Bankdaten erfolgreich gespeichert.'
+  });
+}
+
+// ============================================================
+// Double-Opt-In System
+// ============================================================
 
 /**
  * Double-Opt-In E-Mail senden
@@ -203,15 +454,12 @@ function doGet(e) {
   }
 
   // Health-Check
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  output.setContent(JSON.stringify({
+  return jsonResponse({
     status: 'ok',
     service: 'DW24 Empfehlungsprogramm',
-    version: '3.0',
+    version: '4.0',
     timestamp: new Date().toISOString()
-  }));
-  return output;
+  });
 }
 
 /**
@@ -235,7 +483,7 @@ function handleConfirmation(token, email) {
       var partnerId = data[i][0]; // Spalte A
       var vorname = data[i][1];   // Spalte B
 
-      // Erfolgsseite mit Partner-Code anzeigen
+      // Erfolgsseite mit Partner-Code und Link zum Dashboard anzeigen
       var html = '<!DOCTYPE html>'
         + '<html lang="de"><head><meta charset="utf-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -259,8 +507,12 @@ function handleConfirmation(token, email) {
         + '.info strong{color:#1E293B;}'
         + '.btn{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#F97316,#FB923C);'
         + 'color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;'
-        + 'font-weight:700;font-size:16px;}'
+        + 'font-weight:700;font-size:16px;margin-right:8px;}'
         + '.btn:hover{opacity:0.9;}'
+        + '.btn-outline{display:inline-block;margin-top:12px;background:transparent;'
+        + 'color:#F97316;padding:12px 28px;border-radius:50px;text-decoration:none;'
+        + 'font-weight:600;font-size:14px;border:2px solid #F97316;}'
+        + '.btn-outline:hover{background:#FFF7ED;}'
         + '</style></head>'
         + '<body><div class="card">'
         + '<div class="icon">&#127881;</div>'
@@ -277,7 +529,9 @@ function handleConfirmation(token, email) {
         + 'Sobald ein Neukunde mit deinem Code bei uns bucht und bezahlt hat, erhaeltst du '
         + '<strong style="color:#F97316;">199&euro; Provision</strong>.</p>'
         + '</div>'
-        + '<a href="https://empfehlung.digitalwerk24.com" class="btn">'
+        + '<a href="https://empfehlung.digitalwerk24.com/partner" class="btn">'
+        + 'Zum Partner-Dashboard &rarr;</a><br>'
+        + '<a href="https://empfehlung.digitalwerk24.com" class="btn-outline">'
         + 'Zurueck zur Startseite</a>'
         + '</div></body></html>';
 
@@ -390,11 +644,15 @@ function createProvisionDraft(email, vorname, partnerCode, empfohlenerName, hatB
       + '<p style="font-size:16px;font-weight:bold;color:#1A1A2E;margin:0 0 8px;">Bankdaten benoetigt</p>'
       + '<p style="font-size:14px;color:#333;margin:0 0 16px;">'
       + 'Damit wir dir die Provision ueberweisen koennen, brauchen wir einmalig '
-      + 'deine Zahlungsdaten. Bitte fuelle das folgende kurze Formular aus:</p>'
+      + 'deine Zahlungsdaten. Du kannst sie entweder ueber dein Partner-Dashboard oder das Formular einreichen:</p>'
+      + '<a href="https://empfehlung.digitalwerk24.com/partner" '
+      + 'style="background:#F97316;color:#fff;padding:12px 24px;border-radius:8px;'
+      + 'text-decoration:none;font-size:14px;font-weight:bold;display:inline-block;margin-right:8px;">'
+      + 'Partner-Dashboard &rarr;</a>'
       + '<a href="' + formUrlWithCode + '" '
       + 'style="background:#FF8C00;color:#fff;padding:12px 24px;border-radius:8px;'
       + 'text-decoration:none;font-size:14px;font-weight:bold;display:inline-block;">'
-      + 'Bankdaten sicher uebermitteln &rarr;</a>'
+      + 'Formular ausfuellen &rarr;</a>'
       + '<p style="font-size:12px;color:#666;margin:12px 0 0;">'
       + 'Deine Daten werden verschluesselt uebertragen und ausschliesslich fuer die '
       + 'Auszahlung verwendet.</p></div>';
