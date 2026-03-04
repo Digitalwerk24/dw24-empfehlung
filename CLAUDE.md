@@ -32,7 +32,7 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 
 ### Tech-Stack
 - **Frontend:** Statische HTML/CSS/JS (index.html + partner.html)
-- **Backend:** Google Apps Script (standalone Web-App, v4.2)
+- **Backend:** Google Apps Script (standalone Web-App, v4.3)
 - **Datenbank:** Google Sheets (6 Tabellenblätter)
 - **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet) + Partner-Dashboard
 - **Hosting:** Vercel (Auto-Deploy bei Push auf main)
@@ -167,11 +167,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Partner tragen Empfehlungen über ihr Dashboard ein
 - Jede Empfehlung wird parallel auch ins Empfehlungen-Sheet geschrieben (für Provisions-Workflow)
 
-### Google Apps Script – Web-App v4.2
+### Google Apps Script – Web-App v4.3
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
 - **Web-App-URL:** `https://script.google.com/macros/s/AKfycbzj3bl7I6FjtK8l0orwnirAp7WmlB-IOtTpKx8X4P3uMdIcOjR4x5fX2fVYf0ria4FJ/exec`
-- **Aktuelle Version:** Version 7 (deployed 04.03.2026, 10:22) – v4.2.1 Bugfix toISOString
+- **Aktuelle Version:** Version 8 (deployed 04.03.2026, 11:02) – v4.3 Empfehlungs-Bearbeitung im Partner-Dashboard
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -180,11 +180,12 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 | Funktion | Zweck | Trigger |
 |----------|-------|---------|
-| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData/submitReferral) | HTTP POST |
+| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData/submitReferral/editReferral) | HTTP POST |
 | `handleRegistration(data)` | Partner-Registrierung: Schreibt Partner ins Sheet + sendet DOI-Mail | Von doPost (action=register) |
-| `handleLogin(data)` | Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen zurück | Von doPost (action=login) |
+| `handleLogin(data)` | Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen (inkl. PE-Details) zurück | Von doPost (action=login) |
 | `handleSaveBankData(data)` | Bankdaten speichern/aktualisieren aus dem Partner-Dashboard | Von doPost (action=saveBankData) |
-| `handleSubmitReferral(data)` | **NEU v4.2:** Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=submitReferral) |
+| `handleSubmitReferral(data)` | Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=submitReferral) |
+| `handleEditReferral(data)` | **NEU v4.3:** Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=editReferral) |
 | `doGet(e)` | Health-Check + Double-Opt-In Bestätigung | HTTP GET (DOI-Link) |
 | `sendDoubleOptIn(...)` | Sendet Bestätigungsmail mit Verifizierungslink | Von handleRegistration |
 | `handleConfirmation(...)` | Verarbeitet DOI-Bestätigung, zeigt Erfolgsseite mit Code + Dashboard-Link | Von doGet |
@@ -200,7 +201,8 @@ Body: { "action": "register", "vorname": "...", ... }  → Partner-Registrierung
 Body: { "action": "login", "email": "...", "code": "DW24-..." }  → Partner-Login + Dashboard-Daten
 Body: { "action": "saveBankData", "email": "...", "code": "...", "iban": "...", ... }  → Bankdaten speichern
 Body: { "action": "forgotCode", "email": "..." }  → Empfehlungscode per E-Mail erneut senden
-Body: { "action": "submitReferral", "email": "...", "code": "...", "refVorname": "...", "refNachname": "...", ... }  → Empfehlung eintragen (NEU v4.2)
+Body: { "action": "submitReferral", "email": "...", "code": "...", "refVorname": "...", "refNachname": "...", ... }  → Empfehlung eintragen
+Body: { "action": "editReferral", "email": "...", "code": "...", "peId": "PE-001", "refVorname": "...", ... }  → Empfehlung bearbeiten (NEU v4.3)
 ```
 
 #### Konstanten im Script
@@ -361,7 +363,8 @@ Felder:
 - **Login:** E-Mail-Adresse + Empfehlungscode als Zugangsdaten
 - **DOI-Prüfung:** Login nur möglich nach E-Mail-Bestätigung
 - **Statistik-Karten:** Anzahl Empfehlungen, Abgeschlossene, Gesamtprovision, Ausgezahlt
-- **Empfehlungen-Liste:** Alle Empfehlungen mit Status (Neu/Kontaktiert/Angebot/Abgeschlossen/Abgelehnt), Datum, Branche
+- **Empfehlungen-Liste:** Alle Empfehlungen mit Status (Neu/Kontaktiert/Angebot/Abgeschlossen/Abgelehnt), Datum, Branche + Provisions-Status
+- **Empfehlung bearbeiten:** Partner können eingetragene Empfehlungen nachträglich bearbeiten (alle Felder außer Status, Modal-Dialog mit Vorausfüllung)
 - **Bankdaten-Formular:** IBAN/PayPal, BIC, Rechnungsadresse, Steuernummer, Art der Tätigkeit
 - **Bankdaten-Status:** Anzeige ob Bankdaten vorhanden sind oder noch fehlen
 - **Auto-Login:** Session wird via sessionStorage gespeichert (kein erneuter Login bei Seitenaktualisierung)
@@ -370,14 +373,15 @@ Felder:
 - **Empfehlung eintragen:** Formular im Dashboard (Vorname, Nachname, Firma, Telefon, E-Mail, Adresse, Branche)
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.2)
+#### Backend (Google Apps Script v4.3)
 - Google Sheets Datenbank mit 6 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten, Partner-Empfehlungen)
-- **Apps Script v4.2** mit Action-Routing im doPost-Endpunkt:
-  - `action=register`: Partner-Registrierung + DOI-Mail (wie bisher)
-  - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen + Bankdaten zurück
+- **Apps Script v4.3** mit Action-Routing im doPost-Endpunkt:
+  - `action=register`: Partner-Registrierung + DOI-Mail
+  - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen (inkl. PE-Details) + Bankdaten zurück
   - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern
   - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (v4.1)
-  - `action=submitReferral`: Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet (NEU in v4.2)
+  - `action=submitReferral`: Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet (v4.2)
+  - `action=editReferral`: Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet (NEU in v4.3)
 - Double-Opt-In (DOI) System komplett implementiert
 - Auszahlungs-Workflow (DW24-EP-011) implementiert
 - Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular
@@ -410,6 +414,7 @@ Felder:
 - ✅ Apps Script v4.1 deployed (Version 5, 04.03.2026, 08:51) – Code-vergessen-Funktion
 - ✅ Apps Script v4.2 deployed (Version 6, 04.03.2026, 09:52) – Empfehlungsverwaltung im Partner-Dashboard
 - ✅ Apps Script v4.2.1 deployed (Version 7, 04.03.2026, 10:22) – Bugfix: toISOString auf partner[8] statt partner[4] korrigiert
+- ✅ Apps Script v4.3 deployed (Version 8, 04.03.2026, 11:02) – Empfehlungs-Bearbeitung im Partner-Dashboard (handleEditReferral + editReferral-Action)
 
 ## Deployment-Checkliste
 
@@ -445,6 +450,8 @@ Felder:
 - [x] Version 5 deployen (v4.1 mit Code-vergessen-Funktion, 04.03.2026, 08:51)
 - [x] Apps Script v4.2: Empfehlungsverwaltung (handleSubmitReferral + Partner-Empfehlungen Sheet)
 - [x] Version 6 deployen (v4.2 mit Empfehlungsverwaltung, 04.03.2026, 09:52)
+- [x] Apps Script v4.3: Empfehlungs-Bearbeitung (handleEditReferral + editReferral-Action)
+- [x] Version 8 deployen (v4.3 mit Empfehlungs-Bearbeitung, 04.03.2026, 11:02)
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -471,6 +478,8 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `3df0323` – v4.3: Empfehlungen bearbeiten – Partner können eingetragene Empfehlungen editieren (04.03.2026)
+- `4d4011b` – Bugfix: Login-Fehler toISOString behoben + neue Web-App URL Version 7 (04.03.2026)
 - `06dd7c3` – Apps Script v4.2 deployed: Web-App URL aktualisiert (04.03.2026)
 - `fa585bc` – Empfehlungsverwaltung: Partner können Empfehlungen im Dashboard eintragen (04.03.2026)
 - `8527fc0` – Apps Script v4.1 deployed: Code-vergessen-Funktion + neue Web-App-URL (04.03.2026)
@@ -485,7 +494,7 @@ Felder:
 ### Dateien im Repository
 - `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
 - `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten + Empfehlungsverwaltung)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.2)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.3)
 - `vercel.json` – Vercel-Konfiguration (Routing für partner.html als /partner)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
