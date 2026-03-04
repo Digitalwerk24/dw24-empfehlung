@@ -169,8 +169,8 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 ### Google Apps Script – Web-App v4.2
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** (wird nach Deployment aktualisiert)
-- **Aktuelle Version:** v4.2 mit Empfehlungsverwaltung (Deployment ausstehend)
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbx1XZ21HqFmHDX6lfg8TUHBh_GneehlM9Wbo3ZNowq6Oj6SMCsvBVvOM1ua7T5jFhgg/exec`
+- **Aktuelle Version:** Version 6 (deployed 04.03.2026, 09:52) – v4.2 mit Empfehlungsverwaltung
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -436,6 +436,8 @@ Felder:
 - [x] Version 3 deployen (03.03.2026, 16:01)
 - [x] Version 4 deployen (v4.0 mit Partner-Dashboard, 03.03.2026, 20:58)
 - [x] Version 5 deployen (v4.1 mit Code-vergessen-Funktion, 04.03.2026, 08:51)
+- [x] Apps Script v4.2: Empfehlungsverwaltung (handleSubmitReferral + Partner-Empfehlungen Sheet)
+- [x] Version 6 deployen (v4.2 mit Empfehlungsverwaltung, 04.03.2026, 09:52)
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -453,7 +455,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbxRFgJgT0MD5rlXo1Hp-ZzK9EaIhWZiMxBeiwq1P0IWxThJZaw_G6EILRjsoBQDF8E_/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbx1XZ21HqFmHDX6lfg8TUHBh_GneehlM9Wbo3ZNowq6Oj6SMCsvBVvOM1ua7T5jFhgg/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
