@@ -146,11 +146,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Wird von Google Forms automatisch befüllt wenn Partner Bankdaten einreichen
 - Verknüpft mit dem Google Formular "Bankdaten für Provisionsauszahlung"
 
-### Google Apps Script – Web-App v4.0
+### Google Apps Script – Web-App v4.1
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbww_UHIybEM0AXBXT_ESvRzZCxBf05CUb6vfVOc_52FaTDsi5Qvp0s6toO33X77qijp/exec`
-- **Aktuelle Version:** Version 4 (deployed 03.03.2026, 20:58) – v4.0 mit Partner-Dashboard
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbxRFgJgT0MD5rlXo1Hp-ZzK9EaIhWZiMxBeiwq1P0IWxThJZaw_G6EILRjsoBQDF8E_/exec`
+- **Aktuelle Version:** Version 5 (deployed 04.03.2026, 08:51) – v4.1 mit Code-vergessen-Funktion
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -345,12 +345,13 @@ Felder:
 - **XSS-Schutz:** HTML-Escaping bei allen Benutzerdaten
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.0)
+#### Backend (Google Apps Script v4.1)
 - Google Sheets Datenbank mit 5 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten)
-- **Apps Script v4.0** mit Action-Routing im doPost-Endpunkt:
+- **Apps Script v4.1** mit Action-Routing im doPost-Endpunkt:
   - `action=register`: Partner-Registrierung + DOI-Mail (wie bisher)
   - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen + Bankdaten zurück
   - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern
+  - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (NEU in v4.1)
 - Double-Opt-In (DOI) System komplett implementiert
 - Auszahlungs-Workflow (DW24-EP-011) implementiert
 - Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular
@@ -406,8 +407,10 @@ Felder:
 - [x] Google Formular "Bankdaten für Provisionsauszahlung" erstellen
 - [x] Formular mit Google Sheet verknüpfen (Formularantworten-Tab)
 - [x] Installable Triggers einrichten (onEdit + onFormSubmit)
+- [x] Apps Script v4.1: Code-vergessen-Funktion (handleForgotCode + forgotcode-Action)
 - [x] Version 3 deployen (03.03.2026, 16:01)
 - [x] Version 4 deployen (v4.0 mit Partner-Dashboard, 03.03.2026, 20:58)
+- [x] Version 5 deployen (v4.1 mit Code-vergessen-Funktion, 04.03.2026, 08:51)
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -425,7 +428,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbww_UHIybEM0AXBXT_ESvRzZCxBf05CUb6vfVOc_52FaTDsi5Qvp0s6toO33X77qijp/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbxRFgJgT0MD5rlXo1Hp-ZzK9EaIhWZiMxBeiwq1P0IWxThJZaw_G6EILRjsoBQDF8E_/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
