@@ -170,8 +170,8 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 ### Google Apps Script – Web-App v4.2
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbx1XZ21HqFmHDX6lfg8TUHBh_GneehlM9Wbo3ZNowq6Oj6SMCsvBVvOM1ua7T5jFhgg/exec`
-- **Aktuelle Version:** Version 6 (deployed 04.03.2026, 09:52) – v4.2 mit Empfehlungsverwaltung
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbzj3bl7I6FjtK8l0orwnirAp7WmlB-IOtTpKx8X4P3uMdIcOjR4x5fX2fVYf0ria4FJ/exec`
+- **Aktuelle Version:** Version 7 (deployed 04.03.2026, 10:22) – v4.2.1 Bugfix toISOString
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -409,6 +409,7 @@ Felder:
 - ✅ Google Sheets Formeln korrigiert – Semikolon-Trennzeichen + Spaltenreferenzen
 - ✅ Apps Script v4.1 deployed (Version 5, 04.03.2026, 08:51) – Code-vergessen-Funktion
 - ✅ Apps Script v4.2 deployed (Version 6, 04.03.2026, 09:52) – Empfehlungsverwaltung im Partner-Dashboard
+- ✅ Apps Script v4.2.1 deployed (Version 7, 04.03.2026, 10:22) – Bugfix: toISOString auf partner[8] statt partner[4] korrigiert
 
 ## Deployment-Checkliste
 
@@ -461,7 +462,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbx1XZ21HqFmHDX6lfg8TUHBh_GneehlM9Wbo3ZNowq6Oj6SMCsvBVvOM1ua7T5jFhgg/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbzj3bl7I6FjtK8l0orwnirAp7WmlB-IOtTpKx8X4P3uMdIcOjR4x5fX2fVYf0ria4FJ/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
