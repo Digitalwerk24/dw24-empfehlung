@@ -453,6 +453,59 @@
             color: #DC2626;
         }
 
+        /* Bearbeiten-Button bei Empfehlungen */
+        .edit-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--gray);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .edit-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* Abbrechen-Button im Formular */
+        .cancel-btn {
+            background: none;
+            border: 2px solid var(--border);
+            color: var(--gray);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none;
+        }
+
+        .cancel-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Bearbeitungs-Hinweis */
+        .edit-notice {
+            display: none;
+            background: var(--info-bg);
+            color: var(--info);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+
         .no-referrals {
             text-align: center;
             padding: 32px 16px;
@@ -878,10 +931,11 @@
             </div>
         </div>
 
-        <!-- Neue Empfehlung eintragen -->
-        <div class="section-card">
-            <h3 class="section-card-title">&#10133; Neue Empfehlung eintragen</h3>
-            <p style="color: var(--gray); font-size: 0.9375rem; margin-bottom: 20px; line-height: 1.6;">
+        <!-- Neue Empfehlung eintragen / bearbeiten -->
+        <div class="section-card" id="referralFormCard">
+            <h3 class="section-card-title" id="referralFormTitle">&#10133; Neue Empfehlung eintragen</h3>
+            <div class="edit-notice" id="editNotice">&#9998; Du bearbeitest eine bestehende Empfehlung. <a href="#" onclick="cancelEdit(); return false;" style="color: var(--info); font-weight: 600;">Abbrechen</a></div>
+            <p id="referralFormDesc" style="color: var(--gray); font-size: 0.9375rem; margin-bottom: 20px; line-height: 1.6;">
                 Du kennst einen Handwerker oder Gruender, der eine Website oder Google Ads braucht? Trag die Kontaktdaten hier ein &ndash; wir kuemmern uns um den Rest!
             </p>
 
@@ -919,6 +973,7 @@
 
                 <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
                     <button type="submit" class="save-btn" id="submitReferralBtn">&#128640; Empfehlung eintragen</button>
+                    <button type="button" class="cancel-btn" id="cancelEditBtn" onclick="cancelEdit()">Abbrechen</button>
                     <span style="font-size: 0.8125rem; color: var(--gray-light);">* Pflichtfelder</span>
                 </div>
 
@@ -1018,6 +1073,10 @@
 
         // Globaler Partner-State
         let currentPartner = null;
+
+        // Empfehlungs-Bearbeitung: State-Variablen
+        let currentEditPeId = null;       // PE-ID der Empfehlung die bearbeitet wird (null = neue Empfehlung)
+        let currentEmpfehlungen = [];     // Gespeicherte Empfehlungsdaten fuer Bearbeitung
 
         // ===== Code vergessen: Ansicht umschalten =====
         function showForgotCode(e) {
@@ -1195,6 +1254,9 @@
             const list = document.getElementById('referralList');
             const noReferrals = document.getElementById('noReferrals');
 
+            // Empfehlungen global speichern (fuer Bearbeitung)
+            currentEmpfehlungen = empfehlungen || [];
+
             if (!empfehlungen || empfehlungen.length === 0) {
                 list.innerHTML = '';
                 noReferrals.style.display = 'block';
@@ -1221,11 +1283,13 @@
                 'Abgelehnt': '&#128308;'
             };
 
-            list.innerHTML = empfehlungen.map(emp => {
-                const statusClass = statusClasses[emp.status] || 'status-neu';
-                const statusIcon = statusIcons[emp.status] || '&#128312;';
-                const provision = emp.status === 'Abgeschlossen' ? '<span class="provision-amount">199,00 &euro;</span>' : '<span style="color: var(--gray-light);">ausstehend</span>';
-                const datum = emp.datum ? new Date(emp.datum).toLocaleDateString('de-DE') : '';
+            list.innerHTML = empfehlungen.map(function(emp, index) {
+                var statusClass = statusClasses[emp.status] || 'status-neu';
+                var statusIcon = statusIcons[emp.status] || '&#128312;';
+                var provision = emp.status === 'Abgeschlossen' ? '<span class="provision-amount">199,00 &euro;</span>' : '<span style="color: var(--gray-light);">Provision ausstehend</span>';
+                var datum = emp.datum ? new Date(emp.datum).toLocaleDateString('de-DE') : '';
+                // Bearbeiten-Button nur anzeigen wenn PE-ID vorhanden (vom Partner eingetragen)
+                var editBtn = emp.peId ? '<button class="edit-btn" onclick="startEditReferral(' + index + ')" title="Bearbeiten">&#9998;</button>' : '';
 
                 return '<li class="referral-item">'
                     + '<div>'
@@ -1235,6 +1299,7 @@
                     + '<div style="display: flex; align-items: center; gap: 12px;">'
                     + '<span class="referral-status ' + statusClass + '">' + statusIcon + ' ' + escapeHtml(emp.status) + '</span>'
                     + '<div style="min-width: 90px; text-align: right; font-size: 0.875rem;">' + provision + '</div>'
+                    + editBtn
                     + '</div>'
                     + '</li>';
             }).join('');
@@ -1376,23 +1441,24 @@
             saveBtn.textContent = 'Bankdaten speichern';
         }
 
-        // ===== Empfehlung eintragen =====
+        // ===== Empfehlung eintragen oder bearbeiten =====
         async function submitReferral(e) {
             e.preventDefault();
 
             var btn = document.getElementById('submitReferralBtn');
             var successEl = document.getElementById('referralSuccess');
             var errorEl = document.getElementById('referralError');
+            var isEdit = !!currentEditPeId;
 
             successEl.style.display = 'none';
             errorEl.style.display = 'none';
             btn.disabled = true;
-            btn.textContent = 'Wird eingetragen...';
+            btn.textContent = isEdit ? 'Wird gespeichert...' : 'Wird eingetragen...';
 
             var credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
 
             var referralData = {
-                action: 'submitReferral',
+                action: isEdit ? 'editReferral' : 'submitReferral',
                 email: credentials.email,
                 code: credentials.code,
                 refVorname: document.getElementById('refVorname').value.trim(),
@@ -1403,6 +1469,11 @@
                 refEmail: document.getElementById('refEmail').value.trim(),
                 refAdresse: document.getElementById('refAdresse').value.trim()
             };
+
+            // Bei Bearbeitung PE-ID mitschicken
+            if (isEdit) {
+                referralData.peId = currentEditPeId;
+            }
 
             try {
                 var response = await fetch(APPS_SCRIPT_URL, {
@@ -1415,34 +1486,65 @@
                 if (result.success) {
                     successEl.innerHTML = '&#10004; ' + escapeHtml(result.message);
                     successEl.style.display = 'block';
-                    document.getElementById('referralForm').reset();
 
-                    // Statistik aktualisieren: Empfehlungen-Zaehler erhoehen
-                    var currentCount = parseInt(document.getElementById('statEmpfehlungen').textContent) || 0;
-                    document.getElementById('statEmpfehlungen').textContent = currentCount + 1;
+                    if (isEdit) {
+                        // Bearbeitung abschliessen und Formular zuruecksetzen
+                        cancelEdit();
 
-                    // Neue Empfehlung in die Liste einfuegen
-                    var noRef = document.getElementById('noReferrals');
-                    if (noRef) noRef.style.display = 'none';
+                        // Empfehlungsliste aktualisieren (Seite neu laden waere auch moeglich)
+                        // Wir aktualisieren die Daten im lokalen Array
+                        for (var i = 0; i < currentEmpfehlungen.length; i++) {
+                            if (currentEmpfehlungen[i].peId === referralData.peId) {
+                                currentEmpfehlungen[i].name = referralData.refVorname + ' ' + referralData.refNachname;
+                                currentEmpfehlungen[i].firma = referralData.refFirma;
+                                currentEmpfehlungen[i].branche = referralData.refBranche;
+                                currentEmpfehlungen[i].refVorname = referralData.refVorname;
+                                currentEmpfehlungen[i].refNachname = referralData.refNachname;
+                                currentEmpfehlungen[i].refFirma = referralData.refFirma;
+                                currentEmpfehlungen[i].refTelefon = referralData.refTelefon;
+                                currentEmpfehlungen[i].refEmail = referralData.refEmail;
+                                currentEmpfehlungen[i].refAdresse = referralData.refAdresse;
+                                break;
+                            }
+                        }
+                        renderReferrals(currentEmpfehlungen);
+                    } else {
+                        // Neue Empfehlung: Formular leeren
+                        document.getElementById('referralForm').reset();
 
-                    var list = document.getElementById('referralList');
-                    var today = new Date().toLocaleDateString('de-DE');
-                    var newItem = '<li class="referral-item">'
-                        + '<div>'
-                        + '<div class="referral-name">' + escapeHtml(referralData.refVorname + ' ' + referralData.refNachname) + '</div>'
-                        + '<div class="referral-date">' + (referralData.refBranche ? escapeHtml(referralData.refBranche) + ' &middot; ' : '') + today + '</div>'
-                        + '</div>'
-                        + '<div style="display: flex; align-items: center; gap: 12px;">'
-                        + '<span class="referral-status status-neu">&#128312; Neu</span>'
-                        + '<div style="min-width: 90px; text-align: right; font-size: 0.875rem;"><span style="color: var(--gray-light);">ausstehend</span></div>'
-                        + '</div>'
-                        + '</li>';
-                    list.insertAdjacentHTML('afterbegin', newItem);
+                        // Statistik aktualisieren: Empfehlungen-Zaehler erhoehen
+                        var currentCount = parseInt(document.getElementById('statEmpfehlungen').textContent) || 0;
+                        document.getElementById('statEmpfehlungen').textContent = currentCount + 1;
+
+                        // Neue Empfehlung in die Liste einfuegen
+                        var noRef = document.getElementById('noReferrals');
+                        if (noRef) noRef.style.display = 'none';
+
+                        var list = document.getElementById('referralList');
+                        var today = new Date().toLocaleDateString('de-DE');
+                        var newIndex = currentEmpfehlungen.length;
+                        // Neue Empfehlung auch ins lokale Array aufnehmen
+                        var newEmp = {
+                            peId: result.referralId || '',
+                            name: referralData.refVorname + ' ' + referralData.refNachname,
+                            branche: referralData.refBranche,
+                            datum: new Date().toISOString(),
+                            status: 'Neu',
+                            refVorname: referralData.refVorname,
+                            refNachname: referralData.refNachname,
+                            refFirma: referralData.refFirma,
+                            refTelefon: referralData.refTelefon,
+                            refEmail: referralData.refEmail,
+                            refAdresse: referralData.refAdresse
+                        };
+                        currentEmpfehlungen.unshift(newEmp);
+                        renderReferrals(currentEmpfehlungen);
+                    }
 
                     // Nach 5 Sekunden Erfolgsmeldung ausblenden
                     setTimeout(function() { successEl.style.display = 'none'; }, 5000);
                 } else {
-                    errorEl.textContent = result.message || 'Fehler beim Eintragen. Bitte versuche es erneut.';
+                    errorEl.textContent = result.message || 'Fehler. Bitte versuche es erneut.';
                     errorEl.style.display = 'block';
                 }
             } catch (error) {
@@ -1452,7 +1554,62 @@
             }
 
             btn.disabled = false;
-            btn.textContent = '\uD83D\uDE80 Empfehlung eintragen';
+            if (currentEditPeId) {
+                btn.textContent = '\u2714 Aenderungen speichern';
+            } else {
+                btn.textContent = '\uD83D\uDE80 Empfehlung eintragen';
+            }
+        }
+
+        // ===== Empfehlung bearbeiten: Formular vorbefuellen =====
+        function startEditReferral(index) {
+            var emp = currentEmpfehlungen[index];
+            if (!emp || !emp.peId) return;
+
+            // Edit-Modus aktivieren
+            currentEditPeId = emp.peId;
+
+            // Formular mit bestehenden Daten befuellen
+            document.getElementById('refVorname').value = emp.refVorname || '';
+            document.getElementById('refNachname').value = emp.refNachname || '';
+            document.getElementById('refFirma').value = emp.refFirma || emp.firma || '';
+            document.getElementById('refBranche').value = emp.branche || '';
+            document.getElementById('refTelefon').value = emp.refTelefon || '';
+            document.getElementById('refEmail').value = emp.refEmail || '';
+            document.getElementById('refAdresse').value = emp.refAdresse || '';
+
+            // UI anpassen: Titel, Button, Hinweis
+            document.getElementById('referralFormTitle').innerHTML = '&#9998; Empfehlung bearbeiten';
+            document.getElementById('referralFormDesc').style.display = 'none';
+            document.getElementById('editNotice').style.display = 'block';
+            document.getElementById('submitReferralBtn').textContent = '\u2714 Aenderungen speichern';
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+
+            // Meldungen zuruecksetzen
+            document.getElementById('referralSuccess').style.display = 'none';
+            document.getElementById('referralError').style.display = 'none';
+
+            // Zum Formular scrollen
+            document.getElementById('referralFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ===== Bearbeitung abbrechen =====
+        function cancelEdit() {
+            currentEditPeId = null;
+
+            // Formular leeren
+            document.getElementById('referralForm').reset();
+
+            // UI zuruecksetzen
+            document.getElementById('referralFormTitle').innerHTML = '&#10133; Neue Empfehlung eintragen';
+            document.getElementById('referralFormDesc').style.display = 'block';
+            document.getElementById('editNotice').style.display = 'none';
+            document.getElementById('submitReferralBtn').textContent = '\uD83D\uDE80 Empfehlung eintragen';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+
+            // Meldungen zuruecksetzen
+            document.getElementById('referralSuccess').style.display = 'none';
+            document.getElementById('referralError').style.display = 'none';
         }
 
         // ===== Code kopieren =====

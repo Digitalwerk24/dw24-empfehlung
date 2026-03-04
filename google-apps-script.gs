@@ -1,5 +1,5 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.2 mit Empfehlungsverwaltung)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.3 mit Empfehlungs-Bearbeitung)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
@@ -7,14 +7,16 @@
  *   → action=login: Partner-Login (E-Mail + Empfehlungscode), liefert Dashboard-Daten
  *   → action=saveBankData: Bankdaten speichern/aktualisieren
  *   → action=forgotCode: Empfehlungscode per E-Mail erneut zusenden
- *   → action=submitReferral: Empfehlung vom Partner eintragen (NEU in v4.2)
+ *   → action=submitReferral: Empfehlung vom Partner eintragen (v4.2)
+ *   → action=editReferral: Empfehlung bearbeiten (NEU in v4.3)
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
- * - handleLogin(): Validiert Partner-Credentials, gibt Dashboard-Daten zurueck
+ * - handleLogin(): Validiert Partner-Credentials, gibt Dashboard-Daten inkl. PE-Details zurueck
  * - handleSaveBankData(): Speichert Bankdaten aus dem Partner-Dashboard
  * - handleForgotCode(): Sendet Empfehlungscode per E-Mail erneut zu
- * - handleSubmitReferral(): Partner traegt eigene Empfehlung ein (NEU in v4.2)
+ * - handleSubmitReferral(): Partner traegt eigene Empfehlung ein (v4.2)
+ * - handleEditReferral(): Partner bearbeitet bestehende Empfehlung (NEU in v4.3)
  * - onEditTrigger(e): Erkennt Zahlungsdatum in Empfehlungen, erstellt Gmail-Entwurf
  * - createProvisionDraft(): Erstellt Provisions-Mail als Gmail-Entwurf
  * - onFormSubmit(e): Uebertraegt Bankdaten aus Google Form ins Partner-Sheet
@@ -64,6 +66,8 @@ function doPost(e) {
         return handleForgotCode(data);
       case 'submitreferral':
         return handleSubmitReferral(data);
+      case 'editreferral':
+        return handleEditReferral(data);
       case 'register':
       default:
         return handleRegistration(data);
@@ -227,7 +231,7 @@ function handleLogin(data) {
     });
   }
 
-  // Empfehlungen des Partners laden
+  // Empfehlungen des Partners laden (aus Empfehlungen-Sheet fuer Status/Provision)
   var empfehlungen = [];
   var empSheet = ss.getSheetByName('Empfehlungen');
   if (empSheet) {
@@ -242,9 +246,39 @@ function handleLogin(data) {
           datum: empData[j][8] ? empData[j][8].toISOString ? empData[j][8].toISOString() : empData[j][8].toString() : '',  // I: Empfohlen am
           status: empData[j][9] || 'Neu',            // J: Status
           provisionFaellig: empData[j][12] || '',    // M: Provision faellig
-          provisionAusgezahlt: empData[j][13] || ''  // N: Provision ausgezahlt
+          provisionAusgezahlt: empData[j][13] || '', // N: Provision ausgezahlt
+          empNotizen: empData[j][14] || ''           // O: Notizen (enthaelt PE-ID)
         });
       }
+    }
+  }
+
+  // Detail-Daten aus Partner-Empfehlungen-Sheet anreichern (fuer Bearbeitung)
+  var peSheet = ss.getSheetByName('Partner-Empfehlungen');
+  if (peSheet && peSheet.getLastRow() > 1 && empfehlungen.length > 0) {
+    var peData = peSheet.getDataRange().getValues();
+    for (var e = 0; e < empfehlungen.length; e++) {
+      for (var p = 1; p < peData.length; p++) {
+        if (peData[p][1].toString().toUpperCase().trim() === code) {
+          var peName = ((peData[p][3] || '') + ' ' + (peData[p][4] || '')).trim();
+          // Matching ueber Name ODER PE-ID in Notizen
+          var peId = peData[p][0] || '';
+          var matchByNote = empfehlungen[e].empNotizen && empfehlungen[e].empNotizen.indexOf(peId) > -1;
+          var matchByName = peName === empfehlungen[e].name;
+          if (matchByNote || matchByName) {
+            empfehlungen[e].peId = peId;
+            empfehlungen[e].refVorname = peData[p][3] || '';
+            empfehlungen[e].refNachname = peData[p][4] || '';
+            empfehlungen[e].refFirma = peData[p][5] || '';
+            empfehlungen[e].refTelefon = peData[p][6] || '';
+            empfehlungen[e].refEmail = peData[p][7] || '';
+            empfehlungen[e].refAdresse = peData[p][8] || '';
+            break;
+          }
+        }
+      }
+      // empNotizen nicht an Frontend zurueckgeben
+      delete empfehlungen[e].empNotizen;
     }
   }
 
@@ -631,6 +665,139 @@ function handleSubmitReferral(data) {
     success: true,
     referralId: peId,
     message: 'Empfehlung erfolgreich eingetragen! Wir kuemmern uns um den Rest.'
+  });
+}
+
+// ============================================================
+// ACTION: Empfehlung bearbeiten (NEU in v4.3)
+// ============================================================
+
+/**
+ * Partner bearbeitet eine bestehende Empfehlung ueber das Dashboard.
+ * Aktualisiert "Partner-Empfehlungen" (Detail-Sheet) UND "Empfehlungen" (Workflow-Sheet).
+ */
+function handleEditReferral(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+  var peId = (data.peId || '').trim();
+
+  if (!email || !code || !peId) {
+    return jsonResponse({
+      success: false,
+      message: 'Authentifizierung fehlgeschlagen.'
+    });
+  }
+
+  // Pflichtfelder pruefen
+  var refVorname = (data.refVorname || '').trim();
+  var refNachname = (data.refNachname || '').trim();
+
+  if (!refVorname || !refNachname) {
+    return jsonResponse({
+      success: false,
+      message: 'Bitte mindestens Vorname und Nachname angeben.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // Partner validieren
+  var partnerSheet = ss.getSheetByName('Partner');
+  var partnerData = partnerSheet.getDataRange().getValues();
+  var partnerFound = false;
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+    if (rowEmail === email && rowCode === code) {
+      partnerFound = true;
+      break;
+    }
+  }
+
+  if (!partnerFound) {
+    return jsonResponse({
+      success: false,
+      message: 'Partner nicht gefunden oder Zugangsdaten ungueltig.'
+    });
+  }
+
+  // Partner-Empfehlungen Sheet: Zeile finden
+  var peSheet = ss.getSheetByName('Partner-Empfehlungen');
+  if (!peSheet) {
+    return jsonResponse({
+      success: false,
+      message: 'Empfehlungsdaten nicht gefunden.'
+    });
+  }
+
+  var peData = peSheet.getDataRange().getValues();
+  var peRow = -1;
+  var oldName = '';
+  for (var j = 1; j < peData.length; j++) {
+    if (peData[j][0].toString().trim() === peId && peData[j][1].toString().toUpperCase().trim() === code) {
+      peRow = j;
+      oldName = ((peData[j][3] || '') + ' ' + (peData[j][4] || '')).trim();
+      break;
+    }
+  }
+
+  if (peRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Empfehlung nicht gefunden oder gehoert nicht zu diesem Partner.'
+    });
+  }
+
+  // Neue Daten zusammenstellen
+  var refFirma = (data.refFirma || '').trim();
+  var refTelefon = (data.refTelefon || '').trim();
+  var refEmail = (data.refEmail || '').trim();
+  var refAdresse = (data.refAdresse || '').trim();
+  var refBranche = (data.refBranche || '').trim();
+  var vollName = refVorname + ' ' + refNachname;
+
+  // Partner-Empfehlungen aktualisieren (Spalten D-J)
+  peSheet.getRange(peRow + 1, 4).setValue(refVorname);    // D: Vorname
+  peSheet.getRange(peRow + 1, 5).setValue(refNachname);   // E: Nachname
+  peSheet.getRange(peRow + 1, 6).setValue(refFirma);      // F: Firma
+  peSheet.getRange(peRow + 1, 7).setValue(refTelefon);    // G: Telefon
+  peSheet.getRange(peRow + 1, 8).setValue(refEmail);      // H: E-Mail
+  peSheet.getRange(peRow + 1, 9).setValue(refAdresse);    // I: Adresse
+  peSheet.getRange(peRow + 1, 10).setValue(refBranche);   // J: Branche/Gewerk
+
+  // Notizen aktualisieren
+  var existingNote = peData[peRow][12] || '';
+  var updateNote = existingNote + ' | Bearbeitet am ' + new Date().toLocaleDateString('de-DE');
+  peSheet.getRange(peRow + 1, 13).setValue(updateNote);
+
+  // Empfehlungen-Sheet auch aktualisieren (Matching ueber PE-ID in Notizen oder Name)
+  var empSheet = ss.getSheetByName('Empfehlungen');
+  if (empSheet) {
+    var empData = empSheet.getDataRange().getValues();
+    for (var k = 1; k < empData.length; k++) {
+      if (empData[k][1].toString().toUpperCase().trim() === code) {
+        var empNotizen = (empData[k][14] || '').toString();
+        if (empNotizen.indexOf(peId) > -1 || empData[k][3].toString().trim() === oldName) {
+          empSheet.getRange(k + 1, 4).setValue(vollName);               // D: Empfohlener Name
+          empSheet.getRange(k + 1, 5).setValue(refFirma || refEmail);   // E: Empfohlene Firma/E-Mail
+          empSheet.getRange(k + 1, 6).setValue(refEmail);               // F: E-Mail
+          empSheet.getRange(k + 1, 7).setValue(refTelefon);             // G: Telefon
+          empSheet.getRange(k + 1, 8).setValue(refBranche);             // H: Branche
+          // Notizen aktualisieren
+          var empNote = empData[k][14] || '';
+          empNote += ' | Bearbeitet am ' + new Date().toLocaleDateString('de-DE') + ' | Adresse: ' + refAdresse;
+          empSheet.getRange(k + 1, 15).setValue(empNote);
+          break;
+        }
+      }
+    }
+  }
+
+  Logger.log('DW24: Empfehlung bearbeitet von ' + code + ': ' + vollName + ' (' + peId + ')');
+
+  return jsonResponse({
+    success: true,
+    message: 'Empfehlung erfolgreich aktualisiert!'
   });
 }
 
