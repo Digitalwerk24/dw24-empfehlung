@@ -142,8 +142,8 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 ### Google Apps Script – Web-App v4.0
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbyHk5k5rTEYL5GbYqkXV58ufhLIWCyWhjOdDdDynA2hWVebf92T6ZMvUj4uKfN0TTCY/exec`
-- **Aktuelle Version:** Version 3 (deployed 03.03.2026, 16:01) → **v4.0 muss noch deployed werden!**
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbww_UHIybEM0AXBXT_ESvRzZCxBf05CUb6vfVOc_52FaTDsi5Qvp0s6toO33X77qijp/exec`
+- **Aktuelle Version:** Version 4 (deployed 03.03.2026, 20:58) – v4.0 mit Partner-Dashboard
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -362,7 +362,7 @@ Felder:
 - Google Analytics eingerichtet und verifiziert
 
 ### Offen / TODO
-- **⚠️ Apps Script v4.0 deployen:** Lokale Referenzkopie (google-apps-script.gs) ist aktualisiert. Code muss noch in Google Apps Script eingefügt und als NEUE Version (v4) deployed werden!
+- ~~**Apps Script v4.0 deployen:**~~ ✅ Erledigt (Version 4, 03.03.2026, 20:58)
 - **CORS-Fix verifizieren:** Content-Type Header wurde entfernt (CORS-Preflight-Problem gelöst), Registrierung funktioniert
 - **End-to-End testen:** Kompletten Flow durchspielen inkl. Partner-Dashboard-Login
 - **Mobile-Ansicht testen:** Dashboard auf echtem Smartphone testen
@@ -399,7 +399,7 @@ Felder:
 - [x] Formular mit Google Sheet verknüpfen (Formularantworten-Tab)
 - [x] Installable Triggers einrichten (onEdit + onFormSubmit)
 - [x] Version 3 deployen (03.03.2026, 16:01)
-- [ ] **Version 4 deployen (v4.0 mit Partner-Dashboard-Endpunkten)**
+- [x] Version 4 deployen (v4.0 mit Partner-Dashboard, 03.03.2026, 20:58)
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -417,7 +417,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbyHk5k5rTEYL5GbYqkXV58ufhLIWCyWhjOdDdDynA2hWVebf92T6ZMvUj4uKfN0TTCY/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbww_UHIybEM0AXBXT_ESvRzZCxBf05CUb6vfVOc_52FaTDsi5Qvp0s6toO33X77qijp/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
