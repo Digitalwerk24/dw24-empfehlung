@@ -8,13 +8,41 @@
     <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
     <link rel="apple-touch-icon" href="DW-24-Logo.png">
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1XWYSG8LLW"></script>
+    <!-- Google Consent Mode v2 – Standardmäßig alles verweigert bis Einwilligung erteilt -->
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-1XWYSG8LLW');
+        gtag('consent', 'default', {
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied',
+            'analytics_storage': 'denied'
+        });
+        // GA nur laden wenn Cookie-Consent (von index.html) vorhanden
+        (function() {
+            try {
+                var consent = localStorage.getItem('dw24_cookie_consent');
+                if (consent) {
+                    var settings = JSON.parse(consent);
+                    if (settings.marketing) {
+                        gtag('consent', 'update', {
+                            'ad_storage': 'granted',
+                            'ad_user_data': 'granted',
+                            'ad_personalization': 'granted',
+                            'analytics_storage': 'granted'
+                        });
+                        var s = document.createElement('script');
+                        s.async = true;
+                        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1XWYSG8LLW';
+                        document.head.appendChild(s);
+                        s.onload = function() {
+                            gtag('js', new Date());
+                            gtag('config', 'G-1XWYSG8LLW');
+                        };
+                    }
+                }
+            } catch(e) {}
+        })();
     </script>
 
     <style>

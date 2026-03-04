@@ -9,16 +9,19 @@
     <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
     <link rel="apple-touch-icon" href="DW-24-Logo.png">
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1XWYSG8LLW"></script>
+    <!-- Google Consent Mode v2 – Standardmäßig alles verweigert bis Einwilligung erteilt -->
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-1XWYSG8LLW');
+        gtag('consent', 'default', {
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied',
+            'analytics_storage': 'denied'
+        });
     </script>
 
-    <!-- Facebook Pixel wird über Cookie-Banner geladen (DSGVO-konform) -->
+    <!-- Google Analytics + Facebook Pixel werden erst nach Cookie-Consent geladen (DSGVO-konform) -->
 
     <style>
         /* ===== CSS Reset & Basis ===== */
@@ -1617,7 +1620,7 @@
                 <div class="cookie-category">
                     <div class="cookie-category-info">
                         <h4>Marketing &amp; Analyse</h4>
-                        <p>Helfen uns, Werbeanzeigen zu optimieren und die Nutzung der Seite zu verstehen (z.B. Facebook Pixel).</p>
+                        <p>Google Analytics zur Nutzungsanalyse und Facebook Pixel zur Optimierung von Werbeanzeigen.</p>
                     </div>
                     <label class="cookie-toggle">
                         <input type="checkbox" id="cookieMarketing">
@@ -1651,7 +1654,7 @@
 
             <p>
                 <strong>Vertreten durch:</strong><br>
-                Revis-1 LLC
+                Manuel Horn, Geschäftsführer der Revis-1 LLC
             </p>
 
             <p>
@@ -1673,7 +1676,7 @@
 
             <p>
                 <strong>Verantwortlich für den Inhalt gemäß &sect; 18 Abs. 2 MStV:</strong><br>
-                Revis-1 LLC<br>
+                Manuel Horn<br>
                 Anschrift wie oben
             </p>
 
@@ -1842,7 +1845,14 @@
             </ul>
 
             <h3>7. Drittlandtransfer</h3>
-            <p>Da der Verantwortliche seinen Sitz in den USA hat, werden Ihre Daten in die USA übertragen. Google LLC ist unter dem EU-U.S. Data Privacy Framework (DPF) zertifiziert. Für Vercel Inc. gelten die EU-Standardvertragsklauseln.</p>
+            <p>Da der Verantwortliche selbst seinen Sitz in den USA hat, werden Ihre Daten in ein Drittland (USA) übertragen. Die folgenden Garantien bestehen für die jeweiligen Dienste:</p>
+            <ul>
+                <li><strong>Google LLC</strong> (Analytics, Workspace, Gmail): Zertifiziert unter dem EU-U.S. Data Privacy Framework (DPF), Angemessenheitsbeschluss der EU-Kommission vom 10.07.2023.</li>
+                <li><strong>Vercel Inc.</strong> (Hosting): EU-Standardvertragsklauseln (SCCs) gemäß Durchführungsbeschluss (EU) 2021/914.</li>
+                <li><strong>Cloudflare Inc.</strong> (DNS): Zertifiziert unter dem EU-U.S. Data Privacy Framework (DPF). Cloudflare verarbeitet bei DNS-Auflösung technisch bedingt IP-Adressen.</li>
+                <li><strong>Web3Forms</strong> (Formularverarbeitung): Verarbeitung der Formulardaten ausschließlich zur Zustellung per E-Mail. Serverstandort wird vom Anbieter nicht offengelegt.</li>
+                <li><strong>ipify.org</strong> (IP-Ermittlung): Wird ausschließlich zur einmaligen Ermittlung Ihrer IP-Adresse zum Nachweis der Einwilligung verwendet. Es werden keine weiteren Daten übermittelt.</li>
+            </ul>
 
             <h3>8. Speicherdauer</h3>
             <p>Ihre Daten werden solange gespeichert, wie es für die Abwicklung des Empfehlungsprogramms erforderlich ist, oder bis Sie die Löschung verlangen. Auszahlungsdaten unterliegen der steuerrechtlichen Aufbewahrungspflicht von 10 Jahren (&sect;147 AO). Consent-Daten (IP-Adresse, Zeitstempel, Version der DSE/TB) werden zur Nachweispflicht gemäß Art. 7 Abs. 1 DSGVO für die Dauer der Geschäftsbeziehung plus 3 Jahre aufbewahrt.</p>
@@ -1855,19 +1865,45 @@
                 <li><strong>Löschung</strong> (Art. 17 DSGVO): Recht auf Löschung Ihrer Daten</li>
                 <li><strong>Einschränkung</strong> (Art. 18 DSGVO): Recht auf Einschränkung der Verarbeitung</li>
                 <li><strong>Datenübertragbarkeit</strong> (Art. 20 DSGVO): Recht auf Erhalt Ihrer Daten in maschinenlesbarem Format</li>
-                <li><strong>Widerspruch</strong> (Art. 21 DSGVO): Recht auf Widerspruch gegen die Verarbeitung</li>
                 <li><strong>Widerruf der Einwilligung</strong> (Art. 7 Abs. 3 DSGVO): Recht auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft</li>
             </ul>
             <p>Kontaktieren Sie uns für die Ausübung Ihrer Rechte unter partner@digitalwerk24.com.</p>
 
-            <h3>10. Hosting</h3>
+            <h3>10. Widerspruchsrecht (Art. 21 DSGVO) &ndash; Besonderer Hinweis</h3>
+            <p><strong>Sie haben das Recht, aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit gegen die Verarbeitung Sie betreffender personenbezogener Daten, die auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse) erfolgt, Widerspruch einzulegen. Legen Sie Widerspruch ein, werden wir Ihre personenbezogenen Daten nicht mehr verarbeiten, es sei denn, wir können zwingende schutzwürdige Gründe für die Verarbeitung nachweisen, die Ihre Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.</strong></p>
+            <p>Ihren Widerspruch richten Sie bitte an: partner@digitalwerk24.com</p>
+
+            <h3>11. Hosting</h3>
             <p>Diese Website wird über Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Besuch der Website werden automatisch Serverlogs (IP-Adresse, Browsertyp, Zeitpunkt des Zugriffs) erhoben. Die Verarbeitung erfolgt auf Grundlage der EU-Standardvertragsklauseln.</p>
 
-            <h3>11. Cookies und Local Storage</h3>
-            <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage), um Ihre Cookie-Einstellungen zu speichern. Darüber hinaus können bei Ihrer Einwilligung Marketing-Cookies (z.B. Facebook Pixel) gesetzt werden, um unsere Werbeanzeigen zu optimieren. Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button „Cookie-Einstellungen" im Footer erreichbar ist.</p>
+            <h3>12. Google Analytics</h3>
+            <p>Diese Website nutzt Google Analytics 4 (GA4), einen Webanalysedienst der Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irland). Google Analytics wird <strong>erst nach Ihrer ausdrücklichen Einwilligung</strong> über den Cookie-Banner aktiviert.</p>
+            <ul>
+                <li><strong>Zweck:</strong> Analyse der Websitenutzung zur Verbesserung unseres Angebots</li>
+                <li><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) i.V.m. &sect;25 Abs. 1 TTDSG</li>
+                <li><strong>Empfänger:</strong> Google Ireland Limited; Datenübermittlung an Google LLC (USA) unter dem EU-U.S. Data Privacy Framework (DPF)</li>
+                <li><strong>Gespeicherte Daten:</strong> Anonymisierte Nutzungsdaten (Seitenaufrufe, Verweildauer, Gerätetyp, ungefährer Standort)</li>
+                <li><strong>Speicherdauer:</strong> Google Analytics Cookies werden für maximal 14 Monate gespeichert</li>
+                <li><strong>Google Consent Mode v2:</strong> Wir verwenden den Google Consent Mode v2, der sicherstellt, dass ohne Ihre Einwilligung keine Analyse- oder Marketing-Cookies gesetzt werden</li>
+                <li><strong>Opt-Out:</strong> Sie können Ihre Einwilligung jederzeit über den Button &bdquo;Cookie-Einstellungen&ldquo; im Footer widerrufen</li>
+            </ul>
+            <p>Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Datenschutzerklärung</a> | <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-Out Browser-Add-on</a></p>
 
-            <h3>12. Beschwerderecht</h3>
+            <h3>13. Cookies und Local Storage</h3>
+            <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage), um Ihre Cookie-Einstellungen zu speichern. Darüber hinaus können bei Ihrer Einwilligung Marketing- und Analyse-Cookies gesetzt werden:</p>
+            <ul>
+                <li><strong>Google Analytics</strong> (Analyse): Zur Auswertung der Websitenutzung. Wird erst nach Einwilligung geladen.</li>
+                <li><strong>Facebook Pixel</strong> (Marketing): Zur Optimierung von Werbeanzeigen. Wird erst nach Einwilligung geladen (derzeit noch nicht aktiv).</li>
+            </ul>
+            <p>Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button &bdquo;Cookie-Einstellungen&ldquo; im Footer erreichbar ist.</p>
+
+            <h3>14. Pflicht zur Bereitstellung personenbezogener Daten</h3>
+            <p>Die Bereitstellung Ihrer personenbezogenen Daten (Vorname, Nachname, E-Mail-Adresse) ist für die Teilnahme am Empfehlungsprogramm erforderlich. Ohne diese Daten können wir kein Partnerkonto anlegen, keinen Empfehlungscode vergeben und keine Provisionen abrechnen. Die Angabe Ihrer Telefonnummer ist freiwillig und hat keine Auswirkungen auf Ihre Teilnahme.</p>
+
+            <h3>15. Beschwerderecht</h3>
             <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt. Zuständige Aufsichtsbehörde richtet sich nach Ihrem Wohnsitz.</p>
+
+            <p style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 0.8125rem; color: #94A3B8;"><strong>Version:</strong> 2.0 | <strong>Stand:</strong> 04. März 2026</p>
         </div>
     </div>
 
@@ -2122,9 +2158,30 @@
             settingsBtn.onclick = saveCustomCookies;
         }
 
-        // Marketing-Scripts laden (Facebook Pixel etc.)
+        // Marketing-Scripts laden (Google Analytics + Facebook Pixel)
         // Wird nur aufgerufen wenn Einwilligung vorliegt
         function loadMarketingScripts() {
+            // Google Consent Mode v2 – Einwilligung auf "granted" setzen
+            gtag('consent', 'update', {
+                'ad_storage': 'granted',
+                'ad_user_data': 'granted',
+                'ad_personalization': 'granted',
+                'analytics_storage': 'granted'
+            });
+
+            // Google Analytics GA4 dynamisch laden
+            if (!document.getElementById('ga-script')) {
+                var script = document.createElement('script');
+                script.id = 'ga-script';
+                script.async = true;
+                script.src = 'https://www.googletagmanager.com/gtag/js?id=G-1XWYSG8LLW';
+                document.head.appendChild(script);
+                script.onload = function() {
+                    gtag('js', new Date());
+                    gtag('config', 'G-1XWYSG8LLW');
+                };
+            }
+
             // Facebook Pixel – Pixel-ID einsetzen sobald verfügbar
             // if (!window.fbq) {
             //     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
@@ -2136,7 +2193,6 @@
             //     fbq('init', 'PIXEL_ID');
             //     fbq('track', 'PageView');
             // }
-            console.log('Marketing-Cookies akzeptiert – Scripts werden geladen sobald Pixel-ID hinterlegt ist.');
         }
     </script>
 
