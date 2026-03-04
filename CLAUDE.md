@@ -146,11 +146,31 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Wird von Google Forms automatisch befüllt wenn Partner Bankdaten einreichen
 - Verknüpft mit dem Google Formular "Bankdaten für Provisionsauszahlung"
 
-### Google Apps Script – Web-App v4.1
+**6. Partner-Empfehlungen** (NEU in v4.2) – Separate Detail-Liste zum Nachfassen
+| Spalte | Inhalt |
+|--------|--------|
+| A | ID (PE-001, PE-002, ...) |
+| B | Empfehlungscode |
+| C | Partner-Name |
+| D | Vorname (des Empfohlenen) |
+| E | Nachname (des Empfohlenen) |
+| F | Firma |
+| G | Telefon |
+| H | E-Mail |
+| I | Adresse |
+| J | Branche/Gewerk |
+| K | Eingereicht am |
+| L | Status (Neu / Kontaktiert / In Bearbeitung / Abgeschlossen / Abgelehnt) |
+| M | Notizen |
+- Wird automatisch vom Apps Script erstellt wenn Partner erste Empfehlung einträgt
+- Partner tragen Empfehlungen über ihr Dashboard ein
+- Jede Empfehlung wird parallel auch ins Empfehlungen-Sheet geschrieben (für Provisions-Workflow)
+
+### Google Apps Script – Web-App v4.2
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbxRFgJgT0MD5rlXo1Hp-ZzK9EaIhWZiMxBeiwq1P0IWxThJZaw_G6EILRjsoBQDF8E_/exec`
-- **Aktuelle Version:** Version 5 (deployed 04.03.2026, 08:51) – v4.1 mit Code-vergessen-Funktion
+- **Web-App-URL:** (wird nach Deployment aktualisiert)
+- **Aktuelle Version:** v4.2 mit Empfehlungsverwaltung (Deployment ausstehend)
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -159,10 +179,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 | Funktion | Zweck | Trigger |
 |----------|-------|---------|
-| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData) | HTTP POST |
+| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData/submitReferral) | HTTP POST |
 | `handleRegistration(data)` | Partner-Registrierung: Schreibt Partner ins Sheet + sendet DOI-Mail | Von doPost (action=register) |
-| `handleLogin(data)` | **NEU v4.0:** Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen zurück | Von doPost (action=login) |
-| `handleSaveBankData(data)` | **NEU v4.0:** Bankdaten speichern/aktualisieren aus dem Partner-Dashboard | Von doPost (action=saveBankData) |
+| `handleLogin(data)` | Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen zurück | Von doPost (action=login) |
+| `handleSaveBankData(data)` | Bankdaten speichern/aktualisieren aus dem Partner-Dashboard | Von doPost (action=saveBankData) |
+| `handleSubmitReferral(data)` | **NEU v4.2:** Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=submitReferral) |
 | `doGet(e)` | Health-Check + Double-Opt-In Bestätigung | HTTP GET (DOI-Link) |
 | `sendDoubleOptIn(...)` | Sendet Bestätigungsmail mit Verifizierungslink | Von handleRegistration |
 | `handleConfirmation(...)` | Verarbeitet DOI-Bestätigung, zeigt Erfolgsseite mit Code + Dashboard-Link | Von doGet |
@@ -171,12 +192,14 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 | `onFormSubmit(e)` | Liest Bankdaten aus Google Form, schreibt in Partner-Sheet (Spalten R/S/T) | Installable Trigger (onFormSubmit) |
 | `setupTriggers()` | Erstellt beide installable Triggers programmatisch | Manuell einmalig |
 
-#### doPost Action-Routing (NEU in v4.0)
+#### doPost Action-Routing
 ```
 POST /exec
 Body: { "action": "register", "vorname": "...", ... }  → Partner-Registrierung
 Body: { "action": "login", "email": "...", "code": "DW24-..." }  → Partner-Login + Dashboard-Daten
 Body: { "action": "saveBankData", "email": "...", "code": "...", "iban": "...", ... }  → Bankdaten speichern
+Body: { "action": "forgotCode", "email": "..." }  → Empfehlungscode per E-Mail erneut senden
+Body: { "action": "submitReferral", "email": "...", "code": "...", "refVorname": "...", "refNachname": "...", ... }  → Empfehlung eintragen (NEU v4.2)
 ```
 
 #### Konstanten im Script
@@ -343,15 +366,17 @@ Felder:
 - **Auto-Login:** Session wird via sessionStorage gespeichert (kein erneuter Login bei Seitenaktualisierung)
 - **Code-Kopieren:** Klick auf Empfehlungscode kopiert in Zwischenablage (mit Toast-Benachrichtigung)
 - **XSS-Schutz:** HTML-Escaping bei allen Benutzerdaten
+- **Empfehlung eintragen:** Formular im Dashboard (Vorname, Nachname, Firma, Telefon, E-Mail, Adresse, Branche)
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.1)
-- Google Sheets Datenbank mit 5 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten)
-- **Apps Script v4.1** mit Action-Routing im doPost-Endpunkt:
+#### Backend (Google Apps Script v4.2)
+- Google Sheets Datenbank mit 6 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten, Partner-Empfehlungen)
+- **Apps Script v4.2** mit Action-Routing im doPost-Endpunkt:
   - `action=register`: Partner-Registrierung + DOI-Mail (wie bisher)
   - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen + Bankdaten zurück
   - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern
-  - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (NEU in v4.1)
+  - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (v4.1)
+  - `action=submitReferral`: Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet (NEU in v4.2)
 - Double-Opt-In (DOI) System komplett implementiert
 - Auszahlungs-Workflow (DW24-EP-011) implementiert
 - Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular

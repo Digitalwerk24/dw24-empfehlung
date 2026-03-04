@@ -878,6 +878,55 @@
             </div>
         </div>
 
+        <!-- Neue Empfehlung eintragen -->
+        <div class="section-card">
+            <h3 class="section-card-title">&#10133; Neue Empfehlung eintragen</h3>
+            <p style="color: var(--gray); font-size: 0.9375rem; margin-bottom: 20px; line-height: 1.6;">
+                Du kennst einen Handwerker oder Gruender, der eine Website oder Google Ads braucht? Trag die Kontaktdaten hier ein &ndash; wir kuemmern uns um den Rest!
+            </p>
+
+            <form id="referralForm" onsubmit="submitReferral(event)">
+                <div class="bank-form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="refVorname">Vorname *</label>
+                        <input type="text" id="refVorname" class="form-input" placeholder="Max" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="refNachname">Nachname *</label>
+                        <input type="text" id="refNachname" class="form-input" placeholder="Mustermann" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="refFirma">Firma</label>
+                        <input type="text" id="refFirma" class="form-input" placeholder="z.B. Mustermann Elektrotechnik">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="refBranche">Branche / Gewerk</label>
+                        <input type="text" id="refBranche" class="form-input" placeholder="z.B. Elektriker, Maler, SHK...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="refTelefon">Telefon</label>
+                        <input type="tel" id="refTelefon" class="form-input" placeholder="+49 170 1234567">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="refEmail">E-Mail</label>
+                        <input type="email" id="refEmail" class="form-input" placeholder="max@mustermann.de">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label" for="refAdresse">Adresse</label>
+                        <textarea id="refAdresse" class="form-textarea" placeholder="Strasse, Nr.&#10;PLZ Ort"></textarea>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <button type="submit" class="save-btn" id="submitReferralBtn">&#128640; Empfehlung eintragen</button>
+                    <span style="font-size: 0.8125rem; color: var(--gray-light);">* Pflichtfelder</span>
+                </div>
+
+                <div class="bank-success" id="referralSuccess"></div>
+                <div class="bank-error" id="referralError"></div>
+            </form>
+        </div>
+
         <!-- Empfehlungen -->
         <div class="section-card">
             <h3 class="section-card-title">&#128203; Deine Empfehlungen</h3>
@@ -1325,6 +1374,85 @@
 
             saveBtn.disabled = false;
             saveBtn.textContent = 'Bankdaten speichern';
+        }
+
+        // ===== Empfehlung eintragen =====
+        async function submitReferral(e) {
+            e.preventDefault();
+
+            var btn = document.getElementById('submitReferralBtn');
+            var successEl = document.getElementById('referralSuccess');
+            var errorEl = document.getElementById('referralError');
+
+            successEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Wird eingetragen...';
+
+            var credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
+
+            var referralData = {
+                action: 'submitReferral',
+                email: credentials.email,
+                code: credentials.code,
+                refVorname: document.getElementById('refVorname').value.trim(),
+                refNachname: document.getElementById('refNachname').value.trim(),
+                refFirma: document.getElementById('refFirma').value.trim(),
+                refBranche: document.getElementById('refBranche').value.trim(),
+                refTelefon: document.getElementById('refTelefon').value.trim(),
+                refEmail: document.getElementById('refEmail').value.trim(),
+                refAdresse: document.getElementById('refAdresse').value.trim()
+            };
+
+            try {
+                var response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(referralData)
+                });
+
+                var result = await response.json();
+
+                if (result.success) {
+                    successEl.innerHTML = '&#10004; ' + escapeHtml(result.message);
+                    successEl.style.display = 'block';
+                    document.getElementById('referralForm').reset();
+
+                    // Statistik aktualisieren: Empfehlungen-Zaehler erhoehen
+                    var currentCount = parseInt(document.getElementById('statEmpfehlungen').textContent) || 0;
+                    document.getElementById('statEmpfehlungen').textContent = currentCount + 1;
+
+                    // Neue Empfehlung in die Liste einfuegen
+                    var noRef = document.getElementById('noReferrals');
+                    if (noRef) noRef.style.display = 'none';
+
+                    var list = document.getElementById('referralList');
+                    var today = new Date().toLocaleDateString('de-DE');
+                    var newItem = '<li class="referral-item">'
+                        + '<div>'
+                        + '<div class="referral-name">' + escapeHtml(referralData.refVorname + ' ' + referralData.refNachname) + '</div>'
+                        + '<div class="referral-date">' + (referralData.refBranche ? escapeHtml(referralData.refBranche) + ' &middot; ' : '') + today + '</div>'
+                        + '</div>'
+                        + '<div style="display: flex; align-items: center; gap: 12px;">'
+                        + '<span class="referral-status status-neu">&#128312; Neu</span>'
+                        + '<div style="min-width: 90px; text-align: right; font-size: 0.875rem;"><span style="color: var(--gray-light);">ausstehend</span></div>'
+                        + '</div>'
+                        + '</li>';
+                    list.insertAdjacentHTML('afterbegin', newItem);
+
+                    // Nach 5 Sekunden Erfolgsmeldung ausblenden
+                    setTimeout(function() { successEl.style.display = 'none'; }, 5000);
+                } else {
+                    errorEl.textContent = result.message || 'Fehler beim Eintragen. Bitte versuche es erneut.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Empfehlung-Fehler:', error);
+                errorEl.textContent = 'Verbindungsfehler. Bitte versuche es spaeter erneut.';
+                errorEl.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '\uD83D\uDE80 Empfehlung eintragen';
         }
 
         // ===== Code kopieren =====

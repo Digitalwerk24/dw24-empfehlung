@@ -1,5 +1,5 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.1 mit Code-vergessen-Funktion)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.2 mit Empfehlungsverwaltung)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
@@ -7,12 +7,14 @@
  *   → action=login: Partner-Login (E-Mail + Empfehlungscode), liefert Dashboard-Daten
  *   → action=saveBankData: Bankdaten speichern/aktualisieren
  *   → action=forgotCode: Empfehlungscode per E-Mail erneut zusenden
+ *   → action=submitReferral: Empfehlung vom Partner eintragen (NEU in v4.2)
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
  * - handleLogin(): Validiert Partner-Credentials, gibt Dashboard-Daten zurueck
  * - handleSaveBankData(): Speichert Bankdaten aus dem Partner-Dashboard
  * - handleForgotCode(): Sendet Empfehlungscode per E-Mail erneut zu
+ * - handleSubmitReferral(): Partner traegt eigene Empfehlung ein (NEU in v4.2)
  * - onEditTrigger(e): Erkennt Zahlungsdatum in Empfehlungen, erstellt Gmail-Entwurf
  * - createProvisionDraft(): Erstellt Provisions-Mail als Gmail-Entwurf
  * - onFormSubmit(e): Uebertraegt Bankdaten aus Google Form ins Partner-Sheet
@@ -60,6 +62,8 @@ function doPost(e) {
         return handleSaveBankData(data);
       case 'forgotcode':
         return handleForgotCode(data);
+      case 'submitreferral':
+        return handleSubmitReferral(data);
       case 'register':
       default:
         return handleRegistration(data);
@@ -496,6 +500,141 @@ function handleForgotCode(data) {
 }
 
 // ============================================================
+// ACTION: Empfehlung eintragen (NEU in v4.2)
+// ============================================================
+
+/**
+ * Partner traegt eine neue Empfehlung ueber das Dashboard ein.
+ * Schreibt in "Partner-Empfehlungen" (Detail-Sheet) UND "Empfehlungen" (Workflow-Sheet).
+ */
+function handleSubmitReferral(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+
+  if (!email || !code) {
+    return jsonResponse({
+      success: false,
+      message: 'Authentifizierung fehlgeschlagen.'
+    });
+  }
+
+  // Pflichtfelder pruefen
+  var refVorname = (data.refVorname || '').trim();
+  var refNachname = (data.refNachname || '').trim();
+
+  if (!refVorname || !refNachname) {
+    return jsonResponse({
+      success: false,
+      message: 'Bitte mindestens Vorname und Nachname angeben.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var partnerSheet = ss.getSheetByName('Partner');
+  var partnerData = partnerSheet.getDataRange().getValues();
+
+  // Partner finden und validieren
+  var partnerRow = -1;
+  var partnerName = '';
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+
+    if (rowEmail === email && rowCode === code) {
+      partnerRow = i;
+      partnerName = partnerData[i][1] + ' ' + partnerData[i][2]; // Vorname + Nachname
+      break;
+    }
+  }
+
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Partner nicht gefunden oder Zugangsdaten ungueltig.'
+    });
+  }
+
+  // Empfehlungsdaten zusammenstellen
+  var refFirma = (data.refFirma || '').trim();
+  var refTelefon = (data.refTelefon || '').trim();
+  var refEmail = (data.refEmail || '').trim();
+  var refAdresse = (data.refAdresse || '').trim();
+  var refBranche = (data.refBranche || '').trim();
+  var vollName = refVorname + ' ' + refNachname;
+  var jetzt = new Date();
+
+  // 1. In "Partner-Empfehlungen" Sheet schreiben (Detail-Liste zum Nachfassen)
+  var peSheet = ss.getSheetByName('Partner-Empfehlungen');
+  if (!peSheet) {
+    // Sheet erstellen falls noch nicht vorhanden
+    peSheet = ss.insertSheet('Partner-Empfehlungen');
+    var peHeaders = ['ID', 'Empfehlungscode', 'Partner-Name', 'Vorname', 'Nachname', 'Firma', 'Telefon', 'E-Mail', 'Adresse', 'Branche/Gewerk', 'Eingereicht am', 'Status', 'Notizen'];
+    peSheet.getRange(1, 1, 1, peHeaders.length).setValues([peHeaders]);
+    peSheet.getRange(1, 1, 1, peHeaders.length).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('#ffffff');
+    peSheet.setFrozenRows(1);
+
+    // Status-Dropdown
+    var peStatusRule = SpreadsheetApp.newDataValidation().requireValueInList(['Neu', 'Kontaktiert', 'In Bearbeitung', 'Abgeschlossen', 'Abgelehnt']).build();
+    peSheet.getRange('L2:L1000').setDataValidation(peStatusRule);
+  }
+
+  // ID generieren: PE-001, PE-002, etc.
+  var peLastRow = peSheet.getLastRow();
+  var peNr = String(peLastRow).padStart(3, '0');
+  var peId = 'PE-' + peNr;
+
+  peSheet.appendRow([
+    peId,                 // A: ID
+    code,                 // B: Empfehlungscode
+    partnerName,          // C: Partner-Name
+    refVorname,           // D: Vorname
+    refNachname,          // E: Nachname
+    refFirma,             // F: Firma
+    refTelefon,           // G: Telefon
+    refEmail,             // H: E-Mail
+    refAdresse,           // I: Adresse
+    refBranche,           // J: Branche/Gewerk
+    jetzt,                // K: Eingereicht am
+    'Neu',                // L: Status
+    'Vom Partner eingereicht'  // M: Notizen
+  ]);
+
+  // 2. In "Empfehlungen" Sheet schreiben (Workflow-Sheet fuer Provisionen)
+  var empSheet = ss.getSheetByName('Empfehlungen');
+  if (empSheet) {
+    var empLastRow = empSheet.getLastRow();
+    var empNr = String(empLastRow).padStart(3, '0');
+    var empId = 'EMP-' + empNr;
+
+    empSheet.appendRow([
+      empId,                  // A: Empfehlungs-ID
+      code,                   // B: Empfehlungscode
+      partnerName,            // C: Partner-Name
+      vollName,               // D: Empfohlener Name
+      refFirma || refEmail,   // E: Empfohlene Firma/E-Mail
+      refEmail,               // F: Empfohlene E-Mail
+      refTelefon,             // G: Empfohlenes Telefon
+      refBranche,             // H: Branche/Gewerk
+      jetzt,                  // I: Empfohlen am
+      'Neu',                  // J: Status
+      '',                     // K: DW24-Auftragswert
+      '',                     // L: Kunde bezahlt am
+      '',                     // M: Provision faellig
+      'Nein',                 // N: Provision ausgezahlt
+      'Vom Partner eingereicht (PE-' + peNr + ') | Adresse: ' + refAdresse  // O: Notizen
+    ]);
+  }
+
+  Logger.log('DW24: Neue Empfehlung von ' + code + ': ' + vollName + ' (' + peId + ')');
+
+  return jsonResponse({
+    success: true,
+    referralId: peId,
+    message: 'Empfehlung erfolgreich eingetragen! Wir kuemmern uns um den Rest.'
+  });
+}
+
+// ============================================================
 // Double-Opt-In System
 // ============================================================
 
@@ -566,7 +705,7 @@ function doGet(e) {
   return jsonResponse({
     status: 'ok',
     service: 'DW24 Empfehlungsprogramm',
-    version: '4.1',
+    version: '4.2',
     timestamp: new Date().toISOString()
   });
 }
