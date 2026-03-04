@@ -259,6 +259,14 @@
             text-decoration: underline;
         }
 
+        .forgot-success {
+            background: var(--success-bg);
+            border-radius: 12px;
+            padding: 24px 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
         /* ===== Dashboard ===== */
         .dashboard {
             display: none;
@@ -797,8 +805,39 @@
 
             <div class="login-error" id="loginError"></div>
 
+            <p class="login-help" id="forgotCodeLink">
+                Code vergessen? <a href="#" onclick="showForgotCode(event)">Neuen Code anfordern</a>
+            </p>
+
             <p class="login-help">
                 Noch kein Partner? <a href="https://empfehlung.digitalwerk24.com#anmeldung">Jetzt registrieren</a>
+            </p>
+        </div>
+
+        <!-- Code-vergessen-Formular (wird per Klick eingeblendet) -->
+        <div class="login-card" id="forgotCodeCard" style="display: none;">
+            <div class="login-icon">&#128273;</div>
+            <h1 class="login-title">Code vergessen?</h1>
+            <p class="login-subtitle">Kein Problem! Gib deine E-Mail-Adresse ein und wir senden dir deinen Empfehlungscode erneut zu.</p>
+
+            <form id="forgotCodeForm" onsubmit="handleForgotCode(event)">
+                <div class="form-group">
+                    <label class="form-label" for="forgotEmail">E-Mail-Adresse</label>
+                    <input type="email" id="forgotEmail" class="form-input" placeholder="deine@email.de" required autocomplete="email">
+                </div>
+                <button type="submit" class="login-btn" id="forgotCodeBtn">Code anfordern</button>
+            </form>
+
+            <div class="login-error" id="forgotCodeError"></div>
+
+            <div class="forgot-success" id="forgotCodeSuccess" style="display: none;">
+                <div style="font-size: 36px; margin-bottom: 12px;">&#9989;</div>
+                <p style="font-weight: 600; color: var(--dark); margin-bottom: 8px;">Code wurde versendet!</p>
+                <p style="color: var(--gray); font-size: 0.9375rem;">Bitte pr&uuml;fe dein E-Mail-Postfach (auch den Spam-Ordner).</p>
+            </div>
+
+            <p class="login-help">
+                <a href="#" onclick="showLoginForm(event)">Zur&uuml;ck zum Login</a>
             </p>
         </div>
     </section>
@@ -930,6 +969,73 @@
 
         // Globaler Partner-State
         let currentPartner = null;
+
+        // ===== Code vergessen: Ansicht umschalten =====
+        function showForgotCode(e) {
+            e.preventDefault();
+            document.querySelector('#loginSection .login-card:first-of-type').style.display = 'none';
+            document.getElementById('forgotCodeCard').style.display = 'block';
+            // Felder zuruecksetzen
+            document.getElementById('forgotCodeForm').reset();
+            document.getElementById('forgotCodeError').style.display = 'none';
+            document.getElementById('forgotCodeSuccess').style.display = 'none';
+            document.getElementById('forgotCodeForm').style.display = 'block';
+            document.getElementById('forgotEmail').focus();
+        }
+
+        function showLoginForm(e) {
+            e.preventDefault();
+            document.getElementById('forgotCodeCard').style.display = 'none';
+            document.querySelector('#loginSection .login-card:first-of-type').style.display = 'block';
+        }
+
+        // ===== Code vergessen: Anforderung senden =====
+        async function handleForgotCode(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+            const btn = document.getElementById('forgotCodeBtn');
+            const errorEl = document.getElementById('forgotCodeError');
+            const successEl = document.getElementById('forgotCodeSuccess');
+
+            if (!email) {
+                errorEl.textContent = 'Bitte gib deine E-Mail-Adresse ein.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Wird gesendet...';
+            errorEl.style.display = 'none';
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'forgotCode',
+                        email: email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Formular ausblenden, Erfolgsmeldung anzeigen
+                    document.getElementById('forgotCodeForm').style.display = 'none';
+                    successEl.style.display = 'block';
+                } else {
+                    errorEl.textContent = result.message || 'Es wurde kein Partner mit dieser E-Mail-Adresse gefunden.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Code-Anforderung Fehler:', error);
+                errorEl.textContent = 'Verbindungsfehler. Bitte versuche es spaeter erneut.';
+                errorEl.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Code anfordern';
+        }
 
         // ===== Login =====
         async function handleLogin(e) {

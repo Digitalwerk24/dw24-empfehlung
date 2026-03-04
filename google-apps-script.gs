@@ -1,16 +1,18 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.0 mit Partner-Dashboard)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.1 mit Code-vergessen-Funktion)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
  *   → action=register (oder kein action): Partner-Registrierung + DOI-Mail
  *   → action=login: Partner-Login (E-Mail + Empfehlungscode), liefert Dashboard-Daten
  *   → action=saveBankData: Bankdaten speichern/aktualisieren
+ *   → action=forgotCode: Empfehlungscode per E-Mail erneut zusenden
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
  * - handleLogin(): Validiert Partner-Credentials, gibt Dashboard-Daten zurueck
  * - handleSaveBankData(): Speichert Bankdaten aus dem Partner-Dashboard
+ * - handleForgotCode(): Sendet Empfehlungscode per E-Mail erneut zu
  * - onEditTrigger(e): Erkennt Zahlungsdatum in Empfehlungen, erstellt Gmail-Entwurf
  * - createProvisionDraft(): Erstellt Provisions-Mail als Gmail-Entwurf
  * - onFormSubmit(e): Uebertraegt Bankdaten aus Google Form ins Partner-Sheet
@@ -56,6 +58,8 @@ function doPost(e) {
         return handleLogin(data);
       case 'savebankdata':
         return handleSaveBankData(data);
+      case 'forgotcode':
+        return handleForgotCode(data);
       case 'register':
       default:
         return handleRegistration(data);
@@ -387,6 +391,111 @@ function handleSaveBankData(data) {
 }
 
 // ============================================================
+// ACTION: Code vergessen (NEU in v4.1)
+// ============================================================
+
+/**
+ * Code vergessen: Sucht Partner anhand E-Mail und sendet Empfehlungscode erneut zu
+ * Nur fuer bereits bestaetigte Partner (DOI abgeschlossen)
+ */
+function handleForgotCode(data) {
+  var email = (data.email || '').toLowerCase().trim();
+
+  if (!email) {
+    return jsonResponse({
+      success: false,
+      message: 'Bitte gib deine E-Mail-Adresse ein.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Partner');
+  var partnerData = sheet.getDataRange().getValues();
+
+  // Partner anhand E-Mail suchen (Spalte D, Index 3)
+  var partnerRow = -1;
+  for (var i = 1; i < partnerData.length; i++) {
+    if (partnerData[i][3].toString().toLowerCase().trim() === email) {
+      partnerRow = i;
+      break;
+    }
+  }
+
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Es wurde kein Partner mit dieser E-Mail-Adresse gefunden.'
+    });
+  }
+
+  var partner = partnerData[partnerRow];
+  var vorname = partner[1];           // Spalte B: Vorname
+  var empfehlungscode = partner[5];   // Spalte F: Empfehlungscode
+
+  // E-Mail mit dem Empfehlungscode senden
+  try {
+    var subject = 'Dein Empfehlungscode | Digitalwerk24';
+
+    var htmlBody = '<!DOCTYPE html>'
+      + '<html><head><meta charset="utf-8"></head>'
+      + '<body style="font-family:Arial,sans-serif;margin:0;padding:0;background:#f9fafb;">'
+      + '<div style="max-width:600px;margin:0 auto;padding:20px;">'
+      // Header
+      + '<div style="text-align:center;padding:24px 0;border-bottom:3px solid #F97316;">'
+      + '<h1 style="color:#1E293B;font-size:24px;margin:0;">Digitalwerk24</h1>'
+      + '<p style="color:#F97316;font-size:14px;margin:4px 0 0;">Empfehlungsprogramm</p>'
+      + '</div>'
+      // Body
+      + '<div style="padding:30px 0;">'
+      + '<p style="font-size:16px;color:#333;">Hallo ' + vorname + ',</p>'
+      + '<p style="font-size:16px;color:#333;line-height:1.6;">'
+      + 'du hast deinen Empfehlungscode angefordert. Hier ist er:</p>'
+      + '<div style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:2px dashed #F97316;'
+      + 'border-radius:16px;padding:24px;margin:24px 0;text-align:center;">'
+      + '<span style="display:block;font-size:13px;color:#64748B;text-transform:uppercase;'
+      + 'letter-spacing:1px;font-weight:600;margin-bottom:8px;">Dein Empfehlungscode:</span>'
+      + '<span style="font-size:2rem;font-weight:900;color:#F97316;letter-spacing:3px;'
+      + 'font-family:Courier New,monospace;">' + empfehlungscode + '</span>'
+      + '</div>'
+      + '<p style="font-size:14px;color:#666;line-height:1.6;">'
+      + 'Mit diesem Code und deiner E-Mail-Adresse kannst du dich jederzeit in dein '
+      + '<a href="https://empfehlung.digitalwerk24.com/partner" style="color:#F97316;">Partner-Dashboard</a> einloggen.</p>'
+      + '</div>'
+      // Footer
+      + '<div style="border-top:1px solid #eee;padding:20px 0;font-size:12px;color:#999;">'
+      + '<p>Digitalwerk24 | Revis-1 LLC<br>'
+      + '2645 Executive Park Dr, Weston, FL 33331, USA<br>'
+      + 'partner@digitalwerk24.com</p>'
+      + '<p>Du erhaeltst diese E-Mail weil du deinen Empfehlungscode angefordert hast. '
+      + 'Falls du das nicht warst, kannst du diese E-Mail ignorieren.</p>'
+      + '</div></div></body></html>';
+
+    GmailApp.sendEmail(email, subject,
+      'Dein Empfehlungscode: ' + empfehlungscode + ' – Login: https://empfehlung.digitalwerk24.com/partner',
+      {
+        htmlBody: htmlBody,
+        name: 'Digitalwerk24 Empfehlungsprogramm',
+        replyTo: 'partner@digitalwerk24.com'
+      }
+    );
+
+    Logger.log('DW24: Empfehlungscode erneut gesendet an ' + email + ' (' + empfehlungscode + ')');
+
+    return jsonResponse({
+      success: true,
+      message: 'Dein Empfehlungscode wurde an deine E-Mail-Adresse gesendet.'
+    });
+
+  } catch (mailError) {
+    Logger.log('DW24: Fehler beim Code-Versand an ' + email + ': ' + mailError.message);
+    return jsonResponse({
+      success: false,
+      message: 'E-Mail konnte nicht gesendet werden. Bitte kontaktiere partner@digitalwerk24.com.'
+    });
+  }
+}
+
+// ============================================================
 // Double-Opt-In System
 // ============================================================
 
@@ -457,7 +566,7 @@ function doGet(e) {
   return jsonResponse({
     status: 'ok',
     service: 'DW24 Empfehlungsprogramm',
-    version: '4.0',
+    version: '4.1',
     timestamp: new Date().toISOString()
   });
 }
