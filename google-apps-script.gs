@@ -1,5 +1,5 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.3 mit Empfehlungs-Bearbeitung)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.4 mit Firma + Steuernr. bei Registrierung)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
@@ -146,12 +146,14 @@ function handleRegistration(data) {
     'Aktiv',                          // G: Status
     new Date(),                       // H: Registrierung am
     '',                               // I: Double-Opt-In am (wird nach Bestaetigung gesetzt)
-    data.dse_version || 'v1.0',       // J: DSE-Version
-    data.tb_version || 'v1.0',        // K: TB-Version
+    data.dse_version || 'v2.1',       // J: DSE-Version
+    data.tb_version || 'v1.1',        // K: TB-Version
     data.consent_ip || '',            // L: Consent-IP
     '', '', '', '', '',               // M-Q: Formeln werden unten gesetzt
-    '', '', '',                       // R-T: IBAN, PayPal, Steuernr (leer)
-    'DOI-TOKEN:' + doiToken           // U: Notizen (temporaer fuer DOI-Token)
+    '', '',                           // R-S: IBAN, PayPal (leer)
+    data.steuernummer || '',          // T: Steuernr./USt-ID (bei Registrierung erfasst)
+    'DOI-TOKEN:' + doiToken,          // U: Notizen (temporaer fuer DOI-Token)
+    data.firma || ''                  // V: Firma / Unternehmen (NEU)
   ]);
 
   // Formeln in die berechneten Spalten der neuen Zeile einfuegen
@@ -329,6 +331,7 @@ function handleLogin(data) {
       iban: partner[17] || '',                      // R: IBAN
       paypal: partner[18] || '',                    // S: PayPal
       steuernr: partner[19] || '',                  // T: Steuernr
+      firma: partner[21] || '',                     // V: Firma (NEU)
       bic: bic,
       adresse: adresse,
       art: art,
@@ -401,6 +404,12 @@ function handleSaveBankData(data) {
   // Steuernummer aktualisieren
   if (steuernr) {
     sheet.getRange(partnerRow + 1, 20).setValue(steuernr); // Spalte T: Steuernr
+  }
+
+  // Firma aktualisieren (falls uebergeben)
+  var firma = (data.firma || '').trim();
+  if (firma) {
+    sheet.getRange(partnerRow + 1, 22).setValue(firma); // Spalte V: Firma
   }
 
   // Notizen aktualisieren (Bankdaten-Infos anhaengen)

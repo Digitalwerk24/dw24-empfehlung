@@ -989,7 +989,7 @@
         <div class="welcome-bar">
             <div class="welcome-text">
                 <h2>Willkommen, <span id="dashVorname"></span>!</h2>
-                <p>Hier siehst du deine Empfehlungen und Provisionen.</p>
+                <p><span id="dashFirma" style="font-weight: 600; color: var(--dark);"></span> <span id="dashSteuernr" style="color: var(--gray); font-size: 0.8125rem;"></span></p>
             </div>
             <div class="code-badge" id="dashCode" onclick="copyCode()" title="Klicken zum Kopieren"></div>
         </div>
@@ -1092,6 +1092,10 @@
                 &#9888;&#65039; Damit wir dir deine Provision auszahlen koennen, hinterlege bitte deine Bankdaten.
             </div>
 
+            <p style="font-size: 0.8125rem; color: var(--gray); line-height: 1.6; margin-bottom: 20px; padding: 14px 16px; background: var(--info-bg); border-radius: 10px;">
+                &#128196; Wir erstellen deine Provisionsabrechnung automatisch als Gutschrift gem. &sect; 14 Abs. 2 UStG. Stelle sicher, dass Firma, Adresse und Steuernummer korrekt sind.
+            </p>
+
             <form id="bankForm" onsubmit="saveBankData(event)">
                 <div class="bank-form-grid">
                     <div class="form-group full-width">
@@ -1119,13 +1123,38 @@
                     </div>
 
                     <div class="form-group full-width">
-                        <label class="form-label" for="bankAdresse">Rechnungsadresse</label>
-                        <textarea id="bankAdresse" class="form-textarea" placeholder="Strasse, Nr.&#10;PLZ Ort&#10;Land" required></textarea>
+                        <label class="form-label" for="bankFirma">Firma / Unternehmen</label>
+                        <input type="text" id="bankFirma" class="form-input" placeholder="z.B. Mustermann Marketing GbR" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="bankStrasse">Stra&szlig;e + Hausnummer</label>
+                        <input type="text" id="bankStrasse" class="form-input" placeholder="Musterstra&szlig;e 1a" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="bankSteuer">Steuernummer / USt-IdNr. (optional)</label>
-                        <input type="text" id="bankSteuer" class="form-input" placeholder="z.B. 12/345/67890" autocomplete="off">
+                        <label class="form-label" for="bankPlz">PLZ</label>
+                        <input type="text" id="bankPlz" class="form-input" placeholder="12345" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bankOrt">Ort</label>
+                        <input type="text" id="bankOrt" class="form-input" placeholder="Musterstadt" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="bankLand">Land</label>
+                        <select id="bankLand" class="form-select" required>
+                            <option value="">Bitte waehlen...</option>
+                            <option value="Deutschland" selected>Deutschland</option>
+                            <option value="Oesterreich">&Ouml;sterreich</option>
+                            <option value="Schweiz">Schweiz</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bankSteuer">Steuernummer / USt-IdNr.</label>
+                        <input type="text" id="bankSteuer" class="form-input" placeholder="z.B. 12/345/67890" autocomplete="off" required>
                     </div>
 
                     <div class="form-group">
@@ -1270,6 +1299,8 @@
             <p>Wenn Sie sich über unser Anmeldeformular als Empfehlungspartner registrieren, erheben wir folgende Daten:</p>
             <ul>
                 <li>Vorname und Nachname</li>
+                <li>Firma / Unternehmen</li>
+                <li>Steuernummer / USt-IdNr.</li>
                 <li>E-Mail-Adresse</li>
                 <li>Telefonnummer (optional)</li>
                 <li>IP-Adresse (zum Nachweis Ihrer Einwilligung)</li>
@@ -1277,13 +1308,14 @@
                 <li>Version der Datenschutzerklärung und Teilnahmebedingungen zum Zeitpunkt der Anmeldung</li>
                 <li>Marketing-Einwilligung (ja/nein)</li>
             </ul>
-            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
+            <p>Im Rahmen der Provisionsabrechnung (Gutschriftverfahren) werden zusätzlich erhoben: Rechnungsadresse (Straße, PLZ, Ort, Land), Bankverbindung (IBAN oder PayPal-Adresse) sowie ggf. BIC/SWIFT.</p>
+            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms, zur Erstellung von Gutschriften gemäß &sect; 14 Abs. 2 UStG sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
 
             <h3>4. Zwecke und Rechtsgrundlagen</h3>
             <ul>
                 <li><strong>Registrierung &amp; Kontoverwaltung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
                 <li><strong>Double-Opt-In Bestätigung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
-                <li><strong>Provisionsabrechnung:</strong> Art. 6 Abs. 1 lit. b DSGVO und Art. 6 Abs. 1 lit. c DSGVO (steuerliche Aufbewahrungspflichten)</li>
+                <li><strong>Provisionsabrechnung &amp; Gutschriftverfahren:</strong> Art. 6 Abs. 1 lit. b DSGVO, Art. 6 Abs. 1 lit. c DSGVO (steuerliche Aufbewahrungspflichten) und &sect; 14 Abs. 2 UStG</li>
                 <li><strong>Marketing-E-Mails</strong> (nur bei gesonderter Einwilligung): Art. 6 Abs. 1 lit. a DSGVO. Widerruf jederzeit per E-Mail an partner@digitalwerk24.com.</li>
                 <li><strong>Consent-Dokumentation</strong> (IP, Zeitstempel, Versionen): Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Nachweis der Einwilligung)</li>
             </ul>
@@ -1338,12 +1370,12 @@
             <p>Diese Website verwendet technisch notwendige Speichermechanismen (Local Storage) für Ihre Cookie-Einstellungen und den Login-Status. Bei Einwilligung werden Marketing- und Analyse-Cookies gesetzt (Google Analytics, Facebook Pixel). Sie können Ihre Einwilligung jederzeit über &bdquo;Cookie-Einstellungen&ldquo; im Footer widerrufen.</p>
 
             <h3>14. Pflicht zur Bereitstellung personenbezogener Daten</h3>
-            <p>Die Bereitstellung Ihrer personenbezogenen Daten (Vorname, Nachname, E-Mail-Adresse) ist für die Teilnahme am Empfehlungsprogramm erforderlich. Ohne diese Daten können wir kein Partnerkonto anlegen. Die Angabe Ihrer Telefonnummer ist freiwillig.</p>
+            <p>Die Bereitstellung Ihrer personenbezogenen Daten (Vorname, Nachname, Firma, Steuernummer, E-Mail-Adresse) ist für die Teilnahme am Empfehlungsprogramm erforderlich. Ohne diese Daten können wir kein Partnerkonto anlegen. Die Angabe Ihrer Telefonnummer ist freiwillig. Die Steuernummer und Firmendaten werden für die Erstellung ordnungsgemäßer Gutschriften gemäß &sect; 14 Abs. 2 UStG zwingend benötigt.</p>
 
             <h3>15. Beschwerderecht</h3>
             <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer Daten gegen die DSGVO verstößt.</p>
 
-            <p style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 0.8125rem; color: #94A3B8;"><strong>Version:</strong> 2.0 | <strong>Stand:</strong> 04. März 2026</p>
+            <p style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 0.8125rem; color: #94A3B8;"><strong>Version:</strong> 2.1 | <strong>Stand:</strong> 04. März 2026</p>
         </div>
     </div>
 
@@ -1506,6 +1538,14 @@
             document.getElementById('dashVorname').textContent = data.vorname;
             document.getElementById('dashCode').textContent = data.empfehlungscode;
 
+            // Firma + Steuernummer anzeigen
+            if (data.firma) {
+                document.getElementById('dashFirma').textContent = data.firma;
+            }
+            if (data.steuernr) {
+                document.getElementById('dashSteuernr').textContent = '| StNr./USt-ID: ' + data.steuernr;
+            }
+
             // Statistiken
             document.getElementById('statEmpfehlungen').textContent = data.anzahlEmpfehlungen || 0;
             document.getElementById('statAbgeschlossen').textContent = data.abgeschlosseneEmpfehlungen || 0;
@@ -1608,8 +1648,33 @@
                 if (data.steuernr) {
                     document.getElementById('bankSteuer').value = data.steuernr;
                 }
+                if (data.firma) {
+                    document.getElementById('bankFirma').value = data.firma;
+                }
+                // Adresse parsen (altes Format: "Strasse\nPLZ Ort\nLand" oder strukturiert)
                 if (data.adresse) {
-                    document.getElementById('bankAdresse').value = data.adresse;
+                    var adresseTeile = data.adresse.split('\n');
+                    if (adresseTeile.length >= 2) {
+                        document.getElementById('bankStrasse').value = adresseTeile[0] || '';
+                        // PLZ und Ort aus zweiter Zeile extrahieren
+                        var plzOrt = (adresseTeile[1] || '').trim();
+                        var plzMatch = plzOrt.match(/^(\d{4,5})\s+(.*)/);
+                        if (plzMatch) {
+                            document.getElementById('bankPlz').value = plzMatch[1];
+                            document.getElementById('bankOrt').value = plzMatch[2];
+                        } else {
+                            document.getElementById('bankOrt').value = plzOrt;
+                        }
+                        if (adresseTeile[2]) {
+                            var land = adresseTeile[2].trim();
+                            if (land.match(/oesterreich|österreich/i)) document.getElementById('bankLand').value = 'Oesterreich';
+                            else if (land.match(/schweiz/i)) document.getElementById('bankLand').value = 'Schweiz';
+                            else document.getElementById('bankLand').value = 'Deutschland';
+                        }
+                    } else {
+                        // Fallback: gesamte Adresse in Strasse-Feld
+                        document.getElementById('bankStrasse').value = data.adresse;
+                    }
                 }
                 if (data.art) {
                     document.getElementById('bankArt').value = data.art;
@@ -1659,6 +1724,13 @@
 
             const credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
 
+            // Strukturierte Adresse zusammenbauen
+            const strasse = document.getElementById('bankStrasse').value.trim();
+            const plz = document.getElementById('bankPlz').value.trim();
+            const ort = document.getElementById('bankOrt').value.trim();
+            const land = document.getElementById('bankLand').value;
+            const adresseStr = strasse + '\n' + plz + ' ' + ort + '\n' + land;
+
             const bankData = {
                 action: 'saveBankData',
                 email: credentials.email,
@@ -1667,7 +1739,8 @@
                 iban: document.getElementById('bankIban').value.trim(),
                 bic: document.getElementById('bankBic').value.trim(),
                 paypal: document.getElementById('bankPaypal').value.trim(),
-                adresse: document.getElementById('bankAdresse').value.trim(),
+                firma: document.getElementById('bankFirma').value.trim(),
+                adresse: adresseStr,
                 steuernr: document.getElementById('bankSteuer').value.trim(),
                 art: document.getElementById('bankArt').value
             };

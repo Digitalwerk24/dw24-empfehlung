@@ -1214,7 +1214,7 @@
     <!-- ===== Header ===== -->
     <header class="header">
         <div class="container">
-            <img src="DW-24-Logo.png" alt="Digitalwerk24 Logo" class="header-logo">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;"><img src="DW-24-Logo.png" alt="Digitalwerk24 Logo" class="header-logo"></a>
             <div class="header-right">
                 <span class="header-badge">PARTNERPROGRAMM</span>
                 <a href="partner" class="partner-login-btn">
@@ -1413,6 +1413,16 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="firma">Firma / Unternehmen *</label>
+                            <input type="text" id="firma" name="Firma" required placeholder="z.B. Mustermann Marketing GbR">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="steuernummer">Steuernummer / USt-IdNr. *</label>
+                            <input type="text" id="steuernummer" name="Steuernummer" required placeholder="z.B. 12/345/67890 oder DE123456789">
+                        </div>
+
+                        <div class="form-group">
                             <label for="email">E-Mail-Adresse *</label>
                             <input type="email" id="email" name="E-Mail" required placeholder="max@beispiel.de">
                         </div>
@@ -1431,7 +1441,7 @@
                             <!-- Checkbox 2: Datenschutz-Kenntnisnahme (Pflicht) -->
                             <div class="form-checkbox">
                                 <input type="checkbox" id="consent-dse" required>
-                                <label for="consent-dse">Ich habe die <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutzerklärung</a> zur Kenntnis genommen. *</label>
+                                <label for="consent-dse">Ich habe die <a href="#" onclick="openModal('datenschutz'); return false;">Datenschutzerklärung</a> zur Kenntnis genommen. Die Verarbeitung meiner Firmendaten und Steuernummer zur Provisionsabrechnung ist mir bekannt. *</label>
                             </div>
                             <!-- Checkbox 3: Marketing (Optional – DSGVO Kopplungsverbot Art. 7 Abs. 4) -->
                             <div class="form-checkbox optional">
@@ -1445,6 +1455,7 @@
                         </button>
                     </form>
                     <p class="form-note">Keine Kosten &bull; Kein Vertrag &bull; Jederzeit kündbar</p>
+                    <p class="form-note" style="margin-top: 8px; font-size: 0.8rem; color: #94A3B8; line-height: 1.5;">Eine Gewerbeanmeldung bzw. Kleingewerbe ist Voraussetzung für die Teilnahme.</p>
                 </div>
 
                 <!-- Erfolgsmeldung: DOI-Hinweis (Code erst nach E-Mail-Bestätigung) -->
@@ -1511,6 +1522,18 @@
 
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFaq(this)">
+                        Muss ich eine Rechnung stellen?
+                        <span class="faq-arrow">&#9660;</span>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Nein. Wir erstellen automatisch eine Gutschrift als Abrechnungsdokument für dich. Voraussetzung ist, dass deine Firmendaten und Steuernummer im Dashboard hinterlegt sind.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
                         Was genau macht Digitalwerk24?
                         <span class="faq-arrow">&#9660;</span>
                     </button>
@@ -1528,7 +1551,7 @@
                     </button>
                     <div class="faq-answer">
                         <div class="faq-answer-inner">
-                            Jeder ab 18 Jahren mit Wohnsitz in Deutschland, Österreich oder der Schweiz. Egal ob Student, Freelancer, Angestellter oder Rentner &ndash; alles, was du brauchst, ist ein Bekanntenkreis.
+                            Jeder ab 18 Jahren mit Gewerbeanmeldung (oder Kleingewerbe) und Wohnsitz in Deutschland, Österreich oder der Schweiz.
                         </div>
                     </div>
                 </div>
@@ -1709,13 +1732,18 @@
         <div class="modal">
             <button class="modal-close" onclick="closeModal('teilnahme')">&times;</button>
             <h2>Teilnahmebedingungen – Digitalwerk24 Empfehlungsprogramm</h2>
-            <p><em>Stand: März 2026</em></p>
+            <p><em>Stand: März 2026, Version 1.1</em></p>
 
             <h3>&sect; 1 Geltungsbereich und Vertragspartner</h3>
             <p>
                 (1) Diese Teilnahmebedingungen regeln die Bedingungen des Empfehlungsprogramms der Revis-1 LLC, handelnd unter Digitalwerk24, 2645 Executive Park Dr, Weston, FL 33331, USA (nachfolgend „Digitalwerk24" oder „wir").<br><br>
                 (2) Das Empfehlungsprogramm richtet sich an natürliche und juristische Personen, die gewerblich oder selbständig tätig sind (nachfolgend „Vertriebspartner"). Mit der Anmeldung zum Empfehlungsprogramm bestätigt der Vertriebspartner, dass er im Rahmen einer gewerblichen oder selbständigen Tätigkeit handelt.<br><br>
                 (3) Verbraucher im Sinne des &sect; 13 BGB sind von der Teilnahme ausgeschlossen. Die Teilnahme setzt eine gewerbliche oder selbständige Tätigkeit voraus. Sofern ein Vertriebspartner noch kein Gewerbe angemeldet hat, ist er verpflichtet, vor der ersten Provisionsauszahlung eine ordnungsgemäße Gewerbeanmeldung (oder vergleichbare Registrierung im jeweiligen Sitzstaat) nachzuweisen.
+            </p>
+
+            <h3>&sect; 1a Teilnahmevoraussetzungen</h3>
+            <p>
+                Voraussetzung für die Teilnahme am Empfehlungsprogramm ist eine gültige Gewerbeanmeldung oder ein Kleingewerbe (bzw. eine vergleichbare gewerbliche Registrierung im jeweiligen Sitzstaat). Ohne Nachweis einer gewerblichen Tätigkeit kann keine Provisionsauszahlung erfolgen.
             </p>
 
             <h3>&sect; 2 Gegenstand des Empfehlungsprogramms</h3>
@@ -1743,6 +1771,14 @@
                 (4) Für Vertriebspartner mit Sitz außerhalb der EU gelten die steuerrechtlichen Bestimmungen des jeweiligen Sitzstaates.<br><br>
                 (5) Der Vertriebspartner ist selbst für die ordnungsgemäße Versteuerung seiner Provisionseinnahmen verantwortlich. Digitalwerk24 übernimmt keine steuerliche Beratung und haftet nicht für steuerliche Versäumnisse des Vertriebspartners.<br><br>
                 (6) Digitalwerk24 behält sich vor, die Auszahlung der Provision zurückzuhalten, bis eine ordnungsgemäße Rechnung und ggf. ein Nachweis der Gewerbeanmeldung vorliegen.
+            </p>
+
+            <h3>&sect; 4a Gutschriftverfahren</h3>
+            <p>
+                (1) Die Provisionsabrechnung erfolgt im Gutschriftverfahren gemäß &sect; 14 Abs. 2 Satz 2 UStG. Digitalwerk24 erstellt für jede fällige Provision eine Gutschrift als Abrechnungsdokument.<br><br>
+                (2) Der Vertriebspartner ist verpflichtet, korrekte Rechnungsangaben (Firma, vollständige Anschrift, Steuernummer bzw. USt-IdNr.) im Partner-Dashboard zu hinterlegen und aktuell zu halten.<br><br>
+                (3) Der Gutschrift kann innerhalb von 14 Tagen nach Zugang widersprochen werden. Erfolgt kein Widerspruch, gilt die Gutschrift als anerkannt.<br><br>
+                (4) Durch die Registrierung erteilt der Vertriebspartner Digitalwerk24 die Berechtigung, Gutschriften im Sinne des &sect; 14 Abs. 2 Satz 2 UStG auszustellen.
             </p>
 
             <h3>&sect; 5 Pflichten des Vertriebspartners</h3>
@@ -1814,6 +1850,8 @@
             <p>Wenn Sie sich über unser Anmeldeformular als Empfehlungspartner registrieren, erheben wir folgende Daten:</p>
             <ul>
                 <li>Vorname und Nachname</li>
+                <li>Firma / Unternehmen</li>
+                <li>Steuernummer / USt-IdNr.</li>
                 <li>E-Mail-Adresse</li>
                 <li>Telefonnummer (optional)</li>
                 <li>IP-Adresse (zum Nachweis Ihrer Einwilligung)</li>
@@ -1821,13 +1859,14 @@
                 <li>Version der Datenschutzerklärung und Teilnahmebedingungen zum Zeitpunkt der Anmeldung</li>
                 <li>Marketing-Einwilligung (ja/nein)</li>
             </ul>
-            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
+            <p>Im Rahmen der Provisionsabrechnung (Gutschriftverfahren) werden zusätzlich erhoben: Rechnungsadresse (Straße, PLZ, Ort, Land), Bankverbindung (IBAN oder PayPal-Adresse) sowie ggf. BIC/SWIFT.</p>
+            <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms, zur Erstellung von Gutschriften gemäß &sect; 14 Abs. 2 UStG sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
 
             <h3>4. Zwecke und Rechtsgrundlagen</h3>
             <ul>
                 <li><strong>Registrierung &amp; Kontoverwaltung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
                 <li><strong>Double-Opt-In Bestätigung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung – Aktivierung des Partnerkontos)</li>
-                <li><strong>Provisionsabrechnung:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) und Art. 6 Abs. 1 lit. c DSGVO (steuerliche Aufbewahrungspflichten)</li>
+                <li><strong>Provisionsabrechnung &amp; Gutschriftverfahren:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung), Art. 6 Abs. 1 lit. c DSGVO (steuerliche Aufbewahrungspflichten) und &sect; 14 Abs. 2 UStG</li>
                 <li><strong>Marketing-E-Mails</strong> (nur bei gesonderter Einwilligung): Art. 6 Abs. 1 lit. a DSGVO (Einwilligung). Widerruf jederzeit per E-Mail an partner@digitalwerk24.com oder über den Abmeldelink in jeder Marketing-E-Mail.</li>
                 <li><strong>Consent-Dokumentation</strong> (IP, Zeitstempel, Versionen): Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Nachweis der Einwilligung)</li>
             </ul>
@@ -1897,12 +1936,12 @@
             <p>Sie können Ihre Einwilligung jederzeit über den Cookie-Banner widerrufen, der über den Button &bdquo;Cookie-Einstellungen&ldquo; im Footer erreichbar ist.</p>
 
             <h3>14. Pflicht zur Bereitstellung personenbezogener Daten</h3>
-            <p>Die Bereitstellung Ihrer personenbezogenen Daten (Vorname, Nachname, E-Mail-Adresse) ist für die Teilnahme am Empfehlungsprogramm erforderlich. Ohne diese Daten können wir kein Partnerkonto anlegen, keinen Empfehlungscode vergeben und keine Provisionen abrechnen. Die Angabe Ihrer Telefonnummer ist freiwillig und hat keine Auswirkungen auf Ihre Teilnahme.</p>
+            <p>Die Bereitstellung Ihrer personenbezogenen Daten (Vorname, Nachname, Firma, Steuernummer, E-Mail-Adresse) ist für die Teilnahme am Empfehlungsprogramm erforderlich. Ohne diese Daten können wir kein Partnerkonto anlegen, keinen Empfehlungscode vergeben und keine Provisionen abrechnen. Die Angabe Ihrer Telefonnummer ist freiwillig und hat keine Auswirkungen auf Ihre Teilnahme. Die Steuernummer und Firmendaten werden für die Erstellung ordnungsgemäßer Gutschriften gemäß &sect; 14 Abs. 2 UStG zwingend benötigt.</p>
 
             <h3>15. Beschwerderecht</h3>
             <p>Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt. Zuständige Aufsichtsbehörde richtet sich nach Ihrem Wohnsitz.</p>
 
-            <p style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 0.8125rem; color: #94A3B8;"><strong>Version:</strong> 2.0 | <strong>Stand:</strong> 04. März 2026</p>
+            <p style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 0.8125rem; color: #94A3B8;"><strong>Version:</strong> 2.1 | <strong>Stand:</strong> 04. März 2026</p>
         </div>
     </div>
 
@@ -1947,8 +1986,8 @@
         const formError = document.getElementById('formError');
 
         // Versionen der Rechtsdokumente
-        const DSE_VERSION = 'v1.0';
-        const TB_VERSION = 'v1.0';
+        const DSE_VERSION = 'v2.1';
+        const TB_VERSION = 'v1.1';
 
         // IP-Adresse ermitteln (fuer DSGVO Consent-Logging)
         let userIP = '';
@@ -1986,6 +2025,8 @@
 
             const vorname = document.getElementById('vorname').value.trim();
             const nachname = document.getElementById('nachname').value.trim();
+            const firma = document.getElementById('firma').value.trim();
+            const steuernummer = document.getElementById('steuernummer').value.trim();
             const email = document.getElementById('email').value.trim();
             const telefon = document.getElementById('telefon').value.trim();
 
@@ -1994,6 +2035,8 @@
                 const sheetData = {
                     vorname: vorname,
                     nachname: nachname,
+                    firma: firma,
+                    steuernummer: steuernummer,
                     email: email,
                     telefon: telefon,
                     dse_version: DSE_VERSION,
