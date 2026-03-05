@@ -13,7 +13,7 @@ Digitalwerk24 ist eine digitale Marketing-Agentur, die Handwerksbetriebe und Exi
 Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, Nebenjobler, etc.) **199€ einmalige Provision** erhält, wenn sie einen zahlenden Neukunden (Handwerker oder Existenzgründer) an Digitalwerk24 vermittelt.
 
 ### Ablauf des Programms
-1. Interessent registriert sich über die Landingpage (Name, E-Mail, optional Telefon)
+1. Interessent registriert sich über die Landingpage (Name, Firma, Steuernr., E-Mail, optional Telefon)
 2. Double-Opt-In: Bestätigungsmail mit Verifizierungslink wird automatisch gesendet
 3. Nach Bestätigung: Digitalwerk24 vergibt einen individuellen Tracking-Code (z.B. DW24-ANNA01)
 4. Partner loggt sich im Dashboard ein (empfehlung.digitalwerk24.com/partner)
@@ -32,7 +32,7 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 
 ### Tech-Stack
 - **Frontend:** Statische HTML/CSS/JS (index.html + partner.html)
-- **Backend:** Google Apps Script (standalone Web-App, v4.3)
+- **Backend:** Google Apps Script (standalone Web-App, v4.4)
 - **Datenbank:** Google Sheets (6 Tabellenblätter)
 - **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet) + Partner-Dashboard
 - **Hosting:** Vercel (Auto-Deploy bei Push auf main)
@@ -82,7 +82,7 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 #### Tabellenblätter (6 Stück)
 
-**1. Partner** (Spalten A-U) – TATSÄCHLICHES Layout im Sheet
+**1. Partner** (Spalten A-V) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
 |--------|--------|
 | A | Partner-ID (z.B. DW24-TEST01) |
@@ -104,8 +104,9 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 | Q | Gesamt-Provisionen (Formel: `=O2+P2`) |
 | R | IBAN |
 | S | PayPal |
-| T | Steuernr./USt-ID |
+| T | Steuernr./USt-ID (wird bei Registrierung erfasst) |
 | U | Notizen |
+| V | Firma / Unternehmen (NEU v4.4, wird bei Registrierung erfasst) |
 
 **2. Empfehlungen** (Spalten A-N) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
@@ -167,11 +168,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Partner tragen Empfehlungen über ihr Dashboard ein
 - Jede Empfehlung wird parallel auch ins Empfehlungen-Sheet geschrieben (für Provisions-Workflow)
 
-### Google Apps Script – Web-App v4.3
+### Google Apps Script – Web-App v4.4
 - **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbzj3bl7I6FjtK8l0orwnirAp7WmlB-IOtTpKx8X4P3uMdIcOjR4x5fX2fVYf0ria4FJ/exec`
-- **Aktuelle Version:** Version 8 (deployed 04.03.2026, 11:02) – v4.3 Empfehlungs-Bearbeitung im Partner-Dashboard
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbxlffSrXJ59kyr4ElFNIlen6n1-h4SizOHGwXyxymdt3kKlHSWTLzs-DHzMu6Cj_Wr5/exec`
+- **Aktuelle Version:** Version 9 (deployed 04.03.2026, 19:36) – v4.4 Firma + Steuernr. bei Registrierung, Gutschriftverfahren
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -290,9 +291,12 @@ Kurze Auflistung der Zielgruppen:
 #### 4. Anmeldeformular
 Felder:
 - Vorname & Nachname (Pflicht)
+- Firma / Unternehmen (Pflicht, NEU v4.4)
+- Steuernummer / USt-IdNr. (Pflicht, NEU v4.4)
 - E-Mail-Adresse (Pflicht)
 - Telefon (optional)
 - Checkbox: Teilnahmebedingungen akzeptieren
+- Hinweistext: "Eine Gewerbeanmeldung bzw. Kleingewerbe ist Voraussetzung für die Teilnahme."
 
 **Formular-Ablauf:**
 1. Web3Forms sendet E-Mail an hello@digitalwerk24.com (Backup)
@@ -305,8 +309,9 @@ Felder:
 - Wann wird die Provision ausgezahlt? → Innerhalb von 14 Tagen nach Zahlungseingang des Neukunden
 - Wie oft kann ich empfehlen? → Unbegrenzt. Für jede erfolgreiche Vermittlung gibt es 199€
 - Muss ich Steuern auf die Provision zahlen? → Die Provision ist als sonstige Einkünfte steuerpflichtig. Bitte informiere dich bei deinem Steuerberater
+- Muss ich eine Rechnung stellen? → Nein, Gutschrift gem. § 14 Abs. 2 UStG wird automatisch erstellt (NEU v4.4)
 - Was genau macht Digitalwerk24? → Wir erstellen professionelle Websites und Google Ads Kampagnen für Handwerker und Existenzgründer
-- Wer kann mitmachen? → Jeder ab 18 Jahren mit Wohnsitz in Deutschland, Österreich oder der Schweiz
+- Wer kann mitmachen? → Jeder ab 18 Jahren mit Gewerbeanmeldung (oder Kleingewerbe) und Wohnsitz in DACH (aktualisiert v4.4)
 
 #### 6. Footer
 - Impressum-Link
@@ -344,7 +349,7 @@ Felder:
 
 #### Frontend (Landingpage + Partner-Dashboard)
 - Komplette Landingpage (index.html) als statische Single-File-Lösung
-- Alle Sektionen umgesetzt: Header, Hero (animierter 199€-Betrag), Verdienstrechner (1/5/10 Empfehlungen), 3-Schritte-Prozess, Zielgruppen-Karten, Trust-Badges, Anmeldeformular, FAQ-Akkordeon (7 Fragen), CTAs nach jedem Abschnitt, Footer
+- Alle Sektionen umgesetzt: Header, Hero (animierter 199€-Betrag), Verdienstrechner (1/5/10 Empfehlungen), 3-Schritte-Prozess, Zielgruppen-Karten, Trust-Badges, Anmeldeformular, FAQ-Akkordeon (9 Fragen), CTAs nach jedem Abschnitt, Footer
 - Impressum & Datenschutz als Modal-Overlays (DSGVO-konform)
 - Anmeldeformular: Web3Forms (Backup-E-Mail) + Apps Script Web-App (Datenbank + DOI)
 - Bot-Schutz über Honeypot-Feld
@@ -365,7 +370,9 @@ Felder:
 - **Statistik-Karten:** Anzahl Empfehlungen, Abgeschlossene, Gesamtprovision, Ausgezahlt
 - **Empfehlungen-Liste:** Alle Empfehlungen mit Status (Neu/Kontaktiert/Angebot/Abgeschlossen/Abgelehnt), Datum, Branche + Provisions-Status
 - **Empfehlung bearbeiten:** Partner können eingetragene Empfehlungen nachträglich bearbeiten (alle Felder außer Status, Modal-Dialog mit Vorausfüllung)
-- **Bankdaten-Formular:** IBAN/PayPal, BIC, Rechnungsadresse, Steuernummer, Art der Tätigkeit
+- **Firma/Steuernr. Anzeige:** Firma + Steuernummer im Dashboard-Header (NEU v4.4)
+- **Gutschrift-Hinweis:** Info-Box vor dem Bankdaten-Formular über automatische Gutschrift gem. § 14 Abs. 2 UStG (NEU v4.4)
+- **Bankdaten-Formular:** Firma (Pflicht), IBAN/PayPal, BIC, strukturierte Adressfelder (Straße, PLZ, Ort, Land-Dropdown DE/AT/CH), Steuernummer (Pflicht), Art der Tätigkeit (v4.4: Freitext-Adresse durch strukturierte Felder ersetzt)
 - **Bankdaten-Status:** Anzeige ob Bankdaten vorhanden sind oder noch fehlen
 - **Auto-Login:** Session wird via sessionStorage gespeichert (kein erneuter Login bei Seitenaktualisierung)
 - **Code-Kopieren:** Klick auf Empfehlungscode kopiert in Zwischenablage (mit Toast-Benachrichtigung)
@@ -373,15 +380,15 @@ Felder:
 - **Empfehlung eintragen:** Formular im Dashboard (Vorname, Nachname, Firma, Telefon, E-Mail, Adresse, Branche)
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.3)
+#### Backend (Google Apps Script v4.4)
 - Google Sheets Datenbank mit 6 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten, Partner-Empfehlungen)
-- **Apps Script v4.3** mit Action-Routing im doPost-Endpunkt:
-  - `action=register`: Partner-Registrierung + DOI-Mail
-  - `action=login`: Partner-Login, gibt Dashboard-Daten + Empfehlungen (inkl. PE-Details) + Bankdaten zurück
-  - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern
+- **Apps Script v4.4** mit Action-Routing im doPost-Endpunkt:
+  - `action=register`: Partner-Registrierung + DOI-Mail (v4.4: Firma in Spalte V, Steuernr. in Spalte T bei Registrierung)
+  - `action=login`: Partner-Login, gibt Dashboard-Daten inkl. Firma + Empfehlungen (inkl. PE-Details) + Bankdaten zurück
+  - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern (v4.4: Firma aktualisierbar)
   - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (v4.1)
   - `action=submitReferral`: Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet (v4.2)
-  - `action=editReferral`: Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet (NEU in v4.3)
+  - `action=editReferral`: Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet (v4.3)
 - Double-Opt-In (DOI) System komplett implementiert
 - Auszahlungs-Workflow (DW24-EP-011) implementiert
 - Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular
@@ -393,14 +400,14 @@ Felder:
 #### DSGVO-Compliance (04.03.2026)
 - **Google Analytics hinter Cookie-Consent:** GA-Script wird nicht mehr direkt im `<head>` geladen, sondern erst nach aktiver Einwilligung über den Cookie-Banner dynamisch nachgeladen (beide Seiten: index.html + partner.html)
 - **Google Consent Mode v2:** Implementiert mit `ad_storage`, `analytics_storage`, `ad_user_data`, `ad_personalization` – standardmäßig auf `denied`, nach Einwilligung auf `granted`
-- **Datenschutzerklärung Version 2.0:** Komplett überarbeitet mit 15 Abschnitten:
+- **Datenschutzerklärung Version 2.1:** Komplett überarbeitet mit 15 Abschnitten (v4.4: Firma, Steuernummer, Gutschrift ergänzt):
   - Neuer Abschnitt 10: Art. 21 Widerspruchsrecht mit gesetzlich gefordertem besonderem Hinweis
   - Neuer Abschnitt 12: Google Analytics (Zweck, Rechtsgrundlage, Empfänger, Speicherdauer, Opt-Out)
   - Neuer Abschnitt 14: Pflicht/Freiwilligkeit der Datenbereitstellung
   - Drittlandtransfer (Abschnitt 7) vervollständigt: Cloudflare, Web3Forms, ipify.org ergänzt
-  - Versionierung und Datum am Ende der DSE (Version 2.0, 04.03.2026)
+  - Versionierung und Datum am Ende der DSE (Version 2.1, 04.03.2026)
 - **Impressum:** Manuel Horn namentlich als Geschäftsführer benannt (statt nur "Revis-1 LLC")
-- **Teilnahmebedingungen § 10:** Rechtswahl auf deutsches Recht + Gerichtsstand Frankfurt am Main (statt Florida/Broward County)
+- **Teilnahmebedingungen Version 1.1:** Rechtswahl auf deutsches Recht + Gerichtsstand Frankfurt am Main + §1a Gewerbe-Voraussetzung + §4a Gutschriftverfahren gem. § 14 Abs. 2 UStG
 - **Cookie-Banner:** Beschreibung aktualisiert – erwähnt jetzt Google Analytics + Facebook Pixel
 - **DSGVO-Report:** `DSGVO-Compliance-Report-empfehlung-digitalwerk24.docx` im Projektordner
 
@@ -433,6 +440,8 @@ Felder:
 - ✅ Apps Script v4.2.1 deployed (Version 7, 04.03.2026, 10:22) – Bugfix: toISOString auf partner[8] statt partner[4] korrigiert
 - ✅ Apps Script v4.3 deployed (Version 8, 04.03.2026, 11:02) – Empfehlungs-Bearbeitung im Partner-Dashboard (handleEditReferral + editReferral-Action)
 - ✅ DSGVO-Compliance-Fixes umgesetzt (04.03.2026) – GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0 mit allen Pflichtangaben, Impressum mit Manuel Horn, Teilnahmebedingungen auf deutsches Recht
+- ✅ Apps Script v4.4 deployed (Version 9, 04.03.2026, 19:36) – Firma + Steuernr. bei Registrierung (Spalte V+T), handleLogin gibt Firma zurück, handleSaveBankData aktualisiert Firma
+- ✅ Gutschriftverfahren implementiert (04.03.2026) – TB v1.1 (§1a Gewerbe, §4a Gutschrift), DSE v2.1, FAQ aktualisiert, strukturierte Adressfelder im Dashboard
 
 ## Deployment-Checkliste
 
@@ -450,7 +459,7 @@ Felder:
 - [x] SSL-Zertifikate prüfen (automatisch ausgestellt)
 - [x] Impressum & Datenschutz einbinden (als Modals)
 - [x] Google Analytics einbauen (G-1XWYSG8LLW)
-- [x] DSGVO-Compliance: GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0, Impressum + TB korrigiert
+- [x] DSGVO-Compliance: GA hinter Cookie-Consent, Consent Mode v2, DSE v2.1, Impressum + TB v1.1 korrigiert
 - [ ] Mobile-Ansicht testen (auf echtem Gerät)
 - [ ] Facebook Pixel / Conversion-Tracking einbauen (für spätere Ads)
 
@@ -471,6 +480,8 @@ Felder:
 - [x] Version 6 deployen (v4.2 mit Empfehlungsverwaltung, 04.03.2026, 09:52)
 - [x] Apps Script v4.3: Empfehlungs-Bearbeitung (handleEditReferral + editReferral-Action)
 - [x] Version 8 deployen (v4.3 mit Empfehlungs-Bearbeitung, 04.03.2026, 11:02)
+- [x] Apps Script v4.4: Firma + Steuernr. bei Registrierung (handleRegistration/Login/SaveBankData)
+- [x] Version 9 deployen (v4.4 mit Firma + Gutschriftverfahren, 04.03.2026, 19:36)
 - [ ] End-to-End Test des kompletten Workflows
 - [ ] Testdaten bereinigen
 
@@ -478,7 +489,7 @@ Felder:
 
 ### Registrierungsformular (Landingpage)
 - **Web3Forms:** API-Key 1cd4f93e-337f-4343-b8e1-da153e720dab (Backup-E-Mail an hello@digitalwerk24.com)
-- **Apps Script:** POST an Web-App-URL mit JSON-Body (vorname, nachname, email, telefon)
+- **Apps Script:** POST an Web-App-URL mit JSON-Body (vorname, nachname, firma, steuernummer, email, telefon)
 - **Bot-Schutz:** Honeypot-Feld (botcheck)
 - **Fehlerbehandlung:** Bei Apps Script Fehler → Web3Forms als Fallback, Hinweis auf hello@digitalwerk24.com
 
@@ -488,7 +499,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbzj3bl7I6FjtK8l0orwnirAp7WmlB-IOtTpKx8X4P3uMdIcOjR4x5fX2fVYf0ria4FJ/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbxlffSrXJ59kyr4ElFNIlen6n1-h4SizOHGwXyxymdt3kKlHSWTLzs-DHzMu6Cj_Wr5/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
@@ -497,6 +508,9 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `3b570f2` – Apps Script v4.4 deployed (Version 9): Neue Web-App-URL aktualisiert (04.03.2026)
+- `9ec78d2` – Gutschriftverfahren: Firma/Steuernr. Pflichtfelder, strukturierte Bankdaten, DSE v2.1 (04.03.2026)
+- `3c96aca` – Impressum: Earlybirds Advisors INC Referenz entfernt (04.03.2026)
 - `9ce9b87` – N3: Rechtswahl und Gerichtsstand auf deutsches Recht umgestellt (04.03.2026)
 - `fcc42a3` – DSGVO-Compliance: GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0 vervollständigt (04.03.2026)
 - `108891e` – Text im Empfehlungsformular angepasst (04.03.2026)
@@ -517,7 +531,7 @@ Felder:
 ### Dateien im Repository
 - `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
 - `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten + Empfehlungsverwaltung)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.3)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.4)
 - `vercel.json` – Vercel-Konfiguration (Routing für partner.html als /partner)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
