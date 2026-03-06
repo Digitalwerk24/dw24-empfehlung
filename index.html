@@ -502,6 +502,111 @@
             color: var(--gray);
         }
 
+        /* ===== Was du empfiehlst ===== */
+        .recommend-section {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+        }
+
+        .recommend-content {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .recommend-intro {
+            font-size: 1.05rem;
+            color: var(--gray);
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+
+        .recommend-intro strong {
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .recommend-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 32px 0;
+        }
+
+        .recommend-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            background: var(--bg);
+            border-radius: 14px;
+            padding: 20px 24px;
+            border: 1px solid var(--border);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .recommend-step:hover {
+            transform: translateX(4px);
+            border-color: var(--primary);
+        }
+
+        .recommend-step-num {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            background: var(--gradient);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .recommend-step-text {
+            font-size: 0.95rem;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .recommend-step-text strong {
+            font-weight: 700;
+        }
+
+        .recommend-winwin {
+            background: var(--primary-light);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-top: 32px;
+            text-align: center;
+        }
+
+        .recommend-winwin-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .recommend-winwin p {
+            font-size: 1.05rem;
+            color: var(--dark);
+            line-height: 1.7;
+        }
+
+        .recommend-winwin strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .recommend-step {
+                padding: 16px 18px;
+            }
+
+            .recommend-winwin {
+                padding: 22px 20px;
+            }
+        }
+
         /* ===== Trust-Badges ===== */
         .trust {
             background: var(--dark);
@@ -1345,6 +1450,45 @@
         </div>
     </section>
 
+    <!-- ===== Was du empfiehlst ===== -->
+    <section class="section recommend-section">
+        <div class="container">
+            <h2 class="section-title fade-in">Was du empfiehlst &ndash; und warum es sich <span class="highlight">so leicht</span> anf&uuml;hlt</h2>
+            <div class="recommend-content fade-in">
+                <p class="recommend-intro">
+                    <strong>Jedes Unternehmen braucht eine Website. Punkt.</strong><br>
+                    Ob Elektriker, Maler, Schreiner oder Existenzgr&uuml;nder &ndash; wer heute kein digitales Schaufenster hat, wird schlicht nicht gefunden. Digitalwerk24 l&ouml;st genau dieses Problem: KI-optimierte Websites und Google Ads Kampagnen, damit das Telefon der Kunden wieder klingelt.
+                </p>
+                <p class="recommend-intro">
+                    Schau dich um: Dein Nachbar, dein Kumpel, dein Friseur, der Handwerker von nebenan &ndash; die meisten sind noch nicht richtig online. <strong>Jeder von ihnen ist eine potenzielle Empfehlung.</strong> Und jede Empfehlung ist <strong style="color: var(--primary);">199&euro; wert</strong>.
+                </p>
+
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--dark);">Dein Job als Partner? Drei Schritte:</h3>
+                <div class="recommend-steps">
+                    <div class="recommend-step">
+                        <div class="recommend-step-num">1</div>
+                        <div class="recommend-step-text"><strong>Teile deinen Code</strong> &ndash; per WhatsApp, Instagram, im Gespr&auml;ch oder wo auch immer</div>
+                    </div>
+                    <div class="recommend-step">
+                        <div class="recommend-step-num">2</div>
+                        <div class="recommend-step-text"><strong>Empfiehl uns</strong> &ndash; an Handwerker, Gr&uuml;nder, Selbst&auml;ndige, die noch nicht online sind</div>
+                    </div>
+                    <div class="recommend-step">
+                        <div class="recommend-step-num">3</div>
+                        <div class="recommend-step-text"><strong>Das war's</strong> &ndash; sobald dein Kontakt Kunde wird, landen 199&euro; auf deinem Konto</div>
+                    </div>
+                </div>
+
+                <div class="recommend-winwin">
+                    <div class="recommend-winwin-icon">&#127881;</div>
+                    <p>
+                        Und das Beste daran: Dein Freund oder Bekannter <strong>spart durch deinen Code nochmals 10&nbsp;%</strong> auf sein erstes Paket. Du verdienst, er spart &ndash; <strong>ein echter Win-Win</strong>. Was gibt's Besseres?
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== Trust-Badges ===== -->
     <section class="trust fade-in">
         <div class="container">
@@ -1413,13 +1557,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="firma">Firma / Unternehmen *</label>
-                            <input type="text" id="firma" name="Firma" required placeholder="z.B. Mustermann Marketing GbR">
+                            <label for="firma">Firma / Unternehmen</label>
+                            <input type="text" id="firma" name="Firma" placeholder="z.B. Mustermann Marketing GbR">
                         </div>
 
                         <div class="form-group">
-                            <label for="steuernummer">Steuernummer / USt-IdNr. *</label>
-                            <input type="text" id="steuernummer" name="Steuernummer" required placeholder="z.B. 12/345/67890 oder DE123456789">
+                            <label for="steuernummer">Steuernummer / USt-IdNr.</label>
+                            <input type="text" id="steuernummer" name="Steuernummer" placeholder="z.B. 12/345/67890 oder DE123456789">
                         </div>
 
                         <div class="form-group">
@@ -1677,7 +1821,7 @@
 
             <p>
                 <strong>Vertreten durch:</strong><br>
-                Manuel Horn, Geschäftsführer der Revis-1 LLC
+                Revis-1 LLC
             </p>
 
             <p>
@@ -1698,7 +1842,7 @@
 
             <p>
                 <strong>Verantwortlich für den Inhalt gemäß &sect; 18 Abs. 2 MStV:</strong><br>
-                Manuel Horn<br>
+                Manuele Fink<br>
                 Anschrift wie oben
             </p>
 
@@ -1844,7 +1988,12 @@
             </p>
 
             <h3>2. Vertreter in der EU (Art. 27 DSGVO)</h3>
-            <p>Da der Verantwortliche seinen Sitz außerhalb der EU hat, wird derzeit ein Vertreter gemäß Art. 27 DSGVO bestellt. Die Angaben werden an dieser Stelle ergänzt, sobald die Bestellung abgeschlossen ist. Bis dahin wenden Sie sich bitte direkt an partner@digitalwerk24.com.</p>
+            <p>
+                Manuele Fink<br>
+                2645 Executive Park Dr<br>
+                33331 Weston FL, USA<br>
+                E-Mail: partner@digitalwerk24.com
+            </p>
 
             <h3>3. Erhebung und Verarbeitung personenbezogener Daten</h3>
             <p>Wenn Sie sich über unser Anmeldeformular als Empfehlungspartner registrieren, erheben wir folgende Daten:</p>
