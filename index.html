@@ -6,6 +6,23 @@
     <title>199€ pro Empfehlung verdienen | Digitalwerk24 Partnerprogramm</title>
     <meta name="description" content="Verdiene 199€ für jede erfolgreiche Empfehlung. Einfach Handwerker oder Gründer empfehlen und kassieren. Kostenlos, ohne Verpflichtung, ohne Limit.">
     <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph / Social Media Vorschau -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://empfehlung.digitalwerk24.com">
+    <meta property="og:title" content="199€ pro Empfehlung verdienen | Digitalwerk24">
+    <meta property="og:description" content="Verdiene 199€ für jede erfolgreiche Empfehlung. Einfach Handwerker oder Gründer empfehlen und kassieren.">
+    <meta property="og:image" content="https://empfehlung.digitalwerk24.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="199€ pro Empfehlung verdienen | Digitalwerk24">
+    <meta name="twitter:description" content="Verdiene 199€ für jede erfolgreiche Empfehlung. Einfach Handwerker oder Gründer empfehlen und kassieren.">
+    <meta name="twitter:image" content="https://empfehlung.digitalwerk24.com/og-image.png">
+
     <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
     <link rel="apple-touch-icon" href="DW-24-Logo.png">
 
@@ -2112,6 +2129,23 @@
 
     <!-- ===== JavaScript ===== -->
     <script>
+        // Scroll-Fix: Bei Seitenaufruf mit Hash (#anmelden) → Hash entfernen, oben starten
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname);
+            window.scrollTo(0, 0);
+        }
+
+        // Nach Klick auf #anmelden-Links: Hash aus URL entfernen (Share-URL bleibt sauber)
+        document.querySelectorAll('a[href="#anmelden"]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.getElementById('anmelden');
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+                // Hash nicht in URL schreiben
+                history.replaceState(null, '', window.location.pathname);
+            });
+        });
+
         // Scroll-Animationen
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
