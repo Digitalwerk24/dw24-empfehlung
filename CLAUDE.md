@@ -107,6 +107,8 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 | T | Steuernr./USt-ID (wird bei Registrierung erfasst) |
 | U | Notizen |
 | V | Firma / Unternehmen (NEU v4.4, wird bei Registrierung erfasst) |
+| W | Gewerbeanmeldung Drive-URL (NEU v4.5) |
+| X | Gewerbeanmeldung hochgeladen am (NEU v4.5) |
 
 **2. Empfehlungen** (Spalten A-N) – TATSÄCHLICHES Layout im Sheet
 | Spalte | Inhalt |
@@ -168,11 +170,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Partner tragen Empfehlungen über ihr Dashboard ein
 - Jede Empfehlung wird parallel auch ins Empfehlungen-Sheet geschrieben (für Provisions-Workflow)
 
-### Google Apps Script – Web-App v4.4
-- **Projekt-Name:** "Digitalwerk24 Kalender" (im Google Workspace digitalwerk24.com)
+### Google Apps Script – Web-App v4.5
+- **Projekt-Name:** "DW24 Empfehlungsprogramm" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
-- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbxlffSrXJ59kyr4ElFNIlen6n1-h4SizOHGwXyxymdt3kKlHSWTLzs-DHzMu6Cj_Wr5/exec`
-- **Aktuelle Version:** Version 9 (deployed 04.03.2026, 19:36) – v4.4 Firma + Steuernr. bei Registrierung, Gutschriftverfahren
+- **Web-App-URL:** `https://script.google.com/macros/s/AKfycbzd2spgoH2ulFLPljUOnw9bjQ-3ryFsnKw5vUYUDujXgvWg25OeWn6huUn9QO9Qtrgu/exec`
+- **Aktuelle Version:** Version 10 (deployed 12.03.2026, 11:01) – v4.5 Gewerbeanmeldung-Upload
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -181,12 +183,13 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 
 | Funktion | Zweck | Trigger |
 |----------|-------|---------|
-| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData/submitReferral/editReferral) | HTTP POST |
+| `doPost(e)` | Zentraler POST-Endpoint mit Action-Routing (register/login/saveBankData/submitReferral/editReferral/uploadGewerbeanmeldung) | HTTP POST |
 | `handleRegistration(data)` | Partner-Registrierung: Schreibt Partner ins Sheet + sendet DOI-Mail | Von doPost (action=register) |
 | `handleLogin(data)` | Partner-Login: Validiert E-Mail + Code, gibt Dashboard-Daten + Empfehlungen (inkl. PE-Details) zurück | Von doPost (action=login) |
 | `handleSaveBankData(data)` | Bankdaten speichern/aktualisieren aus dem Partner-Dashboard | Von doPost (action=saveBankData) |
 | `handleSubmitReferral(data)` | Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=submitReferral) |
 | `handleEditReferral(data)` | **NEU v4.3:** Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet | Von doPost (action=editReferral) |
+| `handleUploadGewerbeanmeldung(data)` | **NEU v4.5:** Gewerbeanmeldung als Base64 hochladen → Google Drive + Sheet Spalten W/X + Gmail-Entwurf | Von doPost (action=uploadGewerbeanmeldung) |
 | `doGet(e)` | Health-Check + Double-Opt-In Bestätigung | HTTP GET (DOI-Link) |
 | `sendDoubleOptIn(...)` | Sendet Bestätigungsmail mit Verifizierungslink | Von handleRegistration |
 | `handleConfirmation(...)` | Verarbeitet DOI-Bestätigung, zeigt Erfolgsseite mit Code + Dashboard-Link | Von doGet |
@@ -204,6 +207,7 @@ Body: { "action": "saveBankData", "email": "...", "code": "...", "iban": "...", 
 Body: { "action": "forgotCode", "email": "..." }  → Empfehlungscode per E-Mail erneut senden
 Body: { "action": "submitReferral", "email": "...", "code": "...", "refVorname": "...", "refNachname": "...", ... }  → Empfehlung eintragen
 Body: { "action": "editReferral", "email": "...", "code": "...", "peId": "PE-001", "refVorname": "...", ... }  → Empfehlung bearbeiten (NEU v4.3)
+Body: { "action": "uploadGewerbeanmeldung", "email": "...", "code": "...", "filename": "...", "fileContent": "base64...", "mimeType": "..." }  → Gewerbeanmeldung hochladen (NEU v4.5)
 ```
 
 #### Konstanten im Script
@@ -378,17 +382,19 @@ Felder:
 - **Code-Kopieren:** Klick auf Empfehlungscode kopiert in Zwischenablage (mit Toast-Benachrichtigung)
 - **XSS-Schutz:** HTML-Escaping bei allen Benutzerdaten
 - **Empfehlung eintragen:** Formular im Dashboard (Vorname, Nachname, Firma, Telefon, E-Mail, Adresse, Branche)
+- **Gewerbeanmeldung-Upload:** Eigene Sektion mit Drag & Drop Upload (PDF/PNG/JPG, max 5MB), Status-Anzeige (fehlend/hochgeladen), Drive-Link, Erneut-hochladen-Funktion (NEU v4.5)
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.4)
+#### Backend (Google Apps Script v4.5)
 - Google Sheets Datenbank mit 6 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten, Partner-Empfehlungen)
-- **Apps Script v4.4** mit Action-Routing im doPost-Endpunkt:
+- **Apps Script v4.5** mit Action-Routing im doPost-Endpunkt:
   - `action=register`: Partner-Registrierung + DOI-Mail (v4.4: Firma in Spalte V, Steuernr. in Spalte T bei Registrierung)
   - `action=login`: Partner-Login, gibt Dashboard-Daten inkl. Firma + Empfehlungen (inkl. PE-Details) + Bankdaten zurück
   - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern (v4.4: Firma aktualisierbar)
   - `action=forgotcode`: Empfehlungscode per E-Mail erneut zusenden (v4.1)
   - `action=submitReferral`: Partner trägt Empfehlung ein → schreibt in Partner-Empfehlungen + Empfehlungen Sheet (v4.2)
   - `action=editReferral`: Partner bearbeitet bestehende Empfehlung → aktualisiert Partner-Empfehlungen + Empfehlungen Sheet (v4.3)
+  - `action=uploadGewerbeanmeldung`: Gewerbeanmeldung als Base64 hochladen → Google Drive + Spalten W/X (v4.5)
 - Double-Opt-In (DOI) System komplett implementiert
 - Auszahlungs-Workflow (DW24-EP-011) implementiert
 - Provisions-E-Mails jetzt mit Link zum Partner-Dashboard UND Bankdaten-Formular
@@ -442,6 +448,9 @@ Felder:
 - ✅ DSGVO-Compliance-Fixes umgesetzt (04.03.2026) – GA hinter Cookie-Consent, Consent Mode v2, DSE v2.0 mit allen Pflichtangaben, Impressum mit Manuel Horn, Teilnahmebedingungen auf deutsches Recht
 - ✅ Apps Script v4.4 deployed (Version 9, 04.03.2026, 19:36) – Firma + Steuernr. bei Registrierung (Spalte V+T), handleLogin gibt Firma zurück, handleSaveBankData aktualisiert Firma
 - ✅ Gutschriftverfahren implementiert (04.03.2026) – TB v1.1 (§1a Gewerbe, §4a Gutschrift), DSE v2.1, FAQ aktualisiert, strukturierte Adressfelder im Dashboard
+- ✅ Hero Partikel-Animation (12.03.2026) – Canvas-basierte goldene Lichtpunkte mit Glow-Effekt im Hero-Bereich
+- ✅ Apps Script v4.5 deployed (Version 10, 12.03.2026, 11:01) – Gewerbeanmeldung-Upload: handleUploadGewerbeanmeldung, Spalten W/X, Google Drive Ordner, Gmail-Entwurf
+- ✅ Gewerbeanmeldung-Upload im Partner-Dashboard (12.03.2026) – Upload-Sektion mit Drag & Drop, Status-Anzeige, Drive-Link, Erneut-hochladen
 
 ## Deployment-Checkliste
 
@@ -499,7 +508,7 @@ Felder:
 |-----------|------|
 | Sheet-ID | `1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs` |
 | Apps Script Projekt | `1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf` |
-| Web-App-URL | `https://script.google.com/macros/s/AKfycbxlffSrXJ59kyr4ElFNIlen6n1-h4SizOHGwXyxymdt3kKlHSWTLzs-DHzMu6Cj_Wr5/exec` |
+| Web-App-URL | `https://script.google.com/macros/s/AKfycbzd2spgoH2ulFLPljUOnw9bjQ-3ryFsnKw5vUYUDujXgvWg25OeWn6huUn9QO9Qtrgu/exec` |
 | Google Form ID | `1lYP6SgdaBUAJWk5NY8zSHiBjqlr5LJXri3_nn_bwMDc` |
 | Form Empfehlungscode-Feld | `1708813850` |
 | Web3Forms API-Key | `1cd4f93e-337f-4343-b8e1-da153e720dab` |
@@ -508,6 +517,10 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `bf32581` – Apps Script v4.5 deployed (Version 10): Neue Web-App-URL aktualisiert (12.03.2026)
+- `d5ae843` – Fix: Gewerbeanmeldung-Datum korrekt parsen (12.03.2026)
+- `09a0d9b` – Gewerbeanmeldung-Upload im Partner-Dashboard v4.5 (12.03.2026)
+- `12e1d67` – Hero: Animierte Partikel-Animation (12.03.2026)
 - `3b570f2` – Apps Script v4.4 deployed (Version 9): Neue Web-App-URL aktualisiert (04.03.2026)
 - `9ec78d2` – Gutschriftverfahren: Firma/Steuernr. Pflichtfelder, strukturierte Bankdaten, DSE v2.1 (04.03.2026)
 - `3c96aca` – Impressum: Earlybirds Advisors INC Referenz entfernt (04.03.2026)
@@ -531,7 +544,7 @@ Felder:
 ### Dateien im Repository
 - `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
 - `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten + Empfehlungsverwaltung)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.4)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.5)
 - `vercel.json` – Vercel-Konfiguration (Routing für partner.html als /partner)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
