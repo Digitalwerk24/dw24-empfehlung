@@ -1789,8 +1789,11 @@
                 // Datum anzeigen
                 if (data.gewerbeanmeldungDatum) {
                     let datum = data.gewerbeanmeldungDatum;
-                    // Falls ISO-Format, in deutsches Format umwandeln
-                    if (datum.includes('T') || datum.includes('-')) {
+                    // Falls ISO-Format (YYYY-MM-DD), manuell parsen um Zeitzonen-Offset zu vermeiden
+                    if (datum.includes('-') && !datum.includes('T')) {
+                        var parts = datum.split('-');
+                        datum = parseInt(parts[2]) + '.' + parseInt(parts[1]) + '.' + parts[0];
+                    } else if (datum.includes('T')) {
                         datum = new Date(datum).toLocaleDateString('de-DE');
                     }
                     document.getElementById('gewerbeDatum').textContent = datum;
