@@ -2408,8 +2408,32 @@
             if (!canvas) return;
             var ctx = canvas.getContext('2d');
             var particles = [];
-            var particleCount = 60;
             var animId;
+
+            // Mobile-Erkennung + Partikel-Begrenzung auf Laptop-Bereich
+            function isMobile() {
+                return window.innerWidth <= 768;
+            }
+
+            // Begrenzungsbereich für Partikel (auf Mobile nur um den Laptop)
+            function getBounds() {
+                if (isMobile()) {
+                    // Laptop ist ca. in der Mitte des Bildes (object-position: 70% center)
+                    return {
+                        xMin: canvas.width * 0.15,
+                        xMax: canvas.width * 0.85,
+                        yMin: canvas.height * 0.25,
+                        yMax: canvas.height * 0.7
+                    };
+                }
+                // Desktop: gesamter Canvas
+                return {
+                    xMin: 0,
+                    xMax: canvas.width,
+                    yMin: 0,
+                    yMax: canvas.height
+                };
+            }
 
             // Canvas-Größe an Hero anpassen
             function resize() {
@@ -2420,6 +2444,7 @@
 
             // Partikel erstellen
             function createParticle() {
+                var bounds = getBounds();
                 // Goldene/orange Töne passend zum Design
                 var colors = [
                     { r: 249, g: 115, b: 22 },   // Orange (Primary)
@@ -2430,8 +2455,8 @@
                 ];
                 var c = colors[Math.floor(Math.random() * colors.length)];
                 return {
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
+                    x: bounds.xMin + Math.random() * (bounds.xMax - bounds.xMin),
+                    y: bounds.yMin + Math.random() * (bounds.yMax - bounds.yMin),
                     radius: Math.random() * 3 + 1.5,
                     color: c,
                     alpha: Math.random() * 0.4 + 0.3,
@@ -2446,13 +2471,16 @@
             function init() {
                 resize();
                 particles = [];
-                for (var i = 0; i < particleCount; i++) {
+                // Weniger Partikel auf Mobile
+                var count = isMobile() ? 30 : 60;
+                for (var i = 0; i < count; i++) {
                     particles.push(createParticle());
                 }
             }
 
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                var bounds = getBounds();
 
                 for (var i = 0; i < particles.length; i++) {
                     var p = particles[i];
@@ -2474,11 +2502,11 @@
                         }
                     }
 
-                    // Am Rand neu positionieren
-                    if (p.x < -10) p.x = canvas.width + 10;
-                    if (p.x > canvas.width + 10) p.x = -10;
-                    if (p.y < -10) p.y = canvas.height + 10;
-                    if (p.y > canvas.height + 10) p.y = -10;
+                    // Am Rand des Begrenzungsbereichs neu positionieren
+                    if (p.x < bounds.xMin - 10) p.x = bounds.xMax + 10;
+                    if (p.x > bounds.xMax + 10) p.x = bounds.xMin - 10;
+                    if (p.y < bounds.yMin - 10) p.y = bounds.yMax + 10;
+                    if (p.y > bounds.yMax + 10) p.y = bounds.yMin - 10;
 
                     // Zeichnen mit Glow-Effekt
                     ctx.save();
@@ -2515,7 +2543,16 @@
             }, { threshold: 0.1 });
 
             observer.observe(canvas.parentElement);
-            window.addEventListener('resize', resize);
+
+            // Bei Resize Partikel neu initialisieren (für Desktop/Mobile-Wechsel)
+            window.addEventListener('resize', function() {
+                resize();
+                particles = [];
+                var count = isMobile() ? 30 : 60;
+                for (var i = 0; i < count; i++) {
+                    particles.push(createParticle());
+                }
+            });
         })();
     </script>
 
