@@ -1,5 +1,5 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.4 mit Firma + Steuernr. bei Registrierung)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v4.5 mit Gewerbeanmeldung-Upload)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
@@ -9,6 +9,7 @@
  *   → action=forgotCode: Empfehlungscode per E-Mail erneut zusenden
  *   → action=submitReferral: Empfehlung vom Partner eintragen (v4.2)
  *   → action=editReferral: Empfehlung bearbeiten (NEU in v4.3)
+ *   → action=uploadGewerbeanmeldung: Gewerbeanmeldung hochladen (NEU in v4.5)
  * - doGet(e): Health-Check + Double-Opt-In Bestaetigung
  * - sendDoubleOptIn(): Sendet Bestaetigungsmail mit Link
  * - handleConfirmation(): Verarbeitet DOI-Bestaetigung, zeigt Erfolgsseite mit Code
@@ -68,6 +69,8 @@ function doPost(e) {
         return handleSubmitReferral(data);
       case 'editreferral':
         return handleEditReferral(data);
+      case 'uploadgewerbeanmeldung':
+        return handleUploadGewerbeanmeldung(data);
       case 'register':
       default:
         return handleRegistration(data);
@@ -332,6 +335,8 @@ function handleLogin(data) {
       paypal: partner[18] || '',                    // S: PayPal
       steuernr: partner[19] || '',                  // T: Steuernr
       firma: partner[21] || '',                     // V: Firma (NEU)
+      gewerbeanmeldungUrl: partner[22] || '',       // W: Gewerbeanmeldung Drive-URL (NEU v4.5)
+      gewerbeanmeldungDatum: partner[23] || '',     // X: Gewerbeanmeldung Upload-Datum (NEU v4.5)
       bic: bic,
       adresse: adresse,
       art: art,
@@ -435,6 +440,180 @@ function handleSaveBankData(data) {
     success: true,
     message: 'Bankdaten erfolgreich gespeichert.'
   });
+}
+
+// ============================================================
+// ACTION: Gewerbeanmeldung hochladen (NEU in v4.5)
+// ============================================================
+
+/**
+ * Gewerbeanmeldung-Upload: Partner laedt Gewerbeanmeldung als PDF/Bild hoch
+ * Datei wird in Google Drive gespeichert und im Partner-Sheet verlinkt
+ * Erstellt Gmail-Entwurf als Benachrichtigung fuer Manuel
+ */
+function handleUploadGewerbeanmeldung(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+
+  if (!email || !code) {
+    return jsonResponse({
+      success: false,
+      message: 'Authentifizierung fehlgeschlagen.'
+    });
+  }
+
+  var filename = (data.filename || '').trim();
+  var fileContent = (data.fileContent || '').trim();
+  var mimeType = (data.mimeType || '').trim();
+
+  // Validierung: Pflichtfelder
+  if (!filename || !fileContent || !mimeType) {
+    return jsonResponse({
+      success: false,
+      message: 'Bitte waehle eine Datei zum Hochladen aus.'
+    });
+  }
+
+  // Validierung: Erlaubte Dateitypen
+  var allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+  if (allowedTypes.indexOf(mimeType) === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Nur PDF-, PNG- und JPG-Dateien sind erlaubt.'
+    });
+  }
+
+  // Partner finden und validieren
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Partner');
+  var partnerData = sheet.getDataRange().getValues();
+
+  var partnerRow = -1;
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+
+    if (rowEmail === email && rowCode === code) {
+      partnerRow = i;
+      break;
+    }
+  }
+
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Partner nicht gefunden oder Zugangsdaten ungueltig.'
+    });
+  }
+
+  var partner = partnerData[partnerRow];
+  var vorname = partner[1] || '';
+  var nachname = partner[2] || '';
+  var partnerCode = partner[5] || '';
+
+  try {
+    // Base64-Daten extrahieren (DataURL Format: data:mimetype;base64,XXXX)
+    var base64Data = fileContent;
+    if (base64Data.indexOf(',') > -1) {
+      base64Data = base64Data.split(',')[1];
+    }
+
+    // Dateiendung ermitteln
+    var ext = 'pdf';
+    if (mimeType === 'image/png') ext = 'png';
+    else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') ext = 'jpg';
+
+    // Dateiname: Gewerbeanmeldung_DW24-CODE_DATUM.ext
+    var datum = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    var driveFilename = 'Gewerbeanmeldung_' + partnerCode + '_' + datum + '.' + ext;
+
+    // Google Drive Ordner finden oder erstellen
+    var rootFolder = DriveApp.getRootFolder();
+    var mainFolders = rootFolder.getFoldersByName('DW24-Gewerbeanmeldungen');
+    var mainFolder;
+    if (mainFolders.hasNext()) {
+      mainFolder = mainFolders.next();
+    } else {
+      mainFolder = rootFolder.createFolder('DW24-Gewerbeanmeldungen');
+    }
+
+    // Alte Gewerbeanmeldung loeschen falls vorhanden
+    var existingFiles = mainFolder.getFilesByName('Gewerbeanmeldung_' + partnerCode);
+    // Suche nach allen Dateien die mit diesem Praefix beginnen
+    var allFiles = mainFolder.getFiles();
+    while (allFiles.hasNext()) {
+      var existingFile = allFiles.next();
+      if (existingFile.getName().indexOf('Gewerbeanmeldung_' + partnerCode + '_') === 0) {
+        existingFile.setTrashed(true);
+      }
+    }
+
+    // Neue Datei erstellen
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(base64Data),
+      mimeType,
+      driveFilename
+    );
+    var file = mainFolder.createFile(blob);
+    var fileUrl = file.getUrl();
+    var fileId = file.getId();
+
+    // Partner-Sheet aktualisieren: Spalte W (23) = Drive-URL, Spalte X (24) = Datum
+    sheet.getRange(partnerRow + 1, 23).setValue(fileUrl);  // Spalte W: Gewerbeanmeldung Drive-URL
+    sheet.getRange(partnerRow + 1, 24).setValue(new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE')); // Spalte X: Upload-Datum
+
+    // Gmail-Entwurf erstellen fuer Manuel
+    var subject = 'Neue Gewerbeanmeldung: ' + vorname + ' ' + nachname + ' (' + partnerCode + ')';
+    var htmlBody = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">'
+      + '<div style="text-align:center;padding:20px 0;border-bottom:3px solid #FF8C00;">'
+      + '<h1 style="color:#1A1A2E;font-size:24px;margin:0;">Digitalwerk24</h1>'
+      + '<p style="color:#FF8C00;font-size:14px;margin:4px 0 0;">Empfehlungsprogramm – Gewerbeanmeldung</p></div>'
+      + '<div style="padding:30px 0;">'
+      + '<p style="font-size:16px;color:#333;">Neue Gewerbeanmeldung hochgeladen:</p>'
+      + '<table style="width:100%;border-collapse:collapse;margin:16px 0;">'
+      + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;width:140px;">Partner:</td>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + vorname + ' ' + nachname + '</td></tr>'
+      + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Empfehlungscode:</td>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + partnerCode + '</td></tr>'
+      + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">E-Mail:</td>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + email + '</td></tr>'
+      + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Dateiname:</td>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + driveFilename + '</td></tr>'
+      + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Hochgeladen am:</td>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + datum + '</td></tr>'
+      + '</table>'
+      + '<a href="' + fileUrl + '" '
+      + 'style="background:#F97316;color:#fff;padding:12px 24px;border-radius:8px;'
+      + 'text-decoration:none;font-size:14px;font-weight:bold;display:inline-block;">'
+      + 'Gewerbeanmeldung in Drive oeffnen &rarr;</a>'
+      + '</div>'
+      + '<div style="border-top:1px solid #eee;padding:20px 0;font-size:12px;color:#999;">'
+      + '<p>Automatisch erstellt vom DW24 Empfehlungsprogramm</p></div></div>';
+
+    GmailApp.createDraft('hello@digitalwerk24.com', subject,
+      'Neue Gewerbeanmeldung von ' + vorname + ' ' + nachname + ' (' + partnerCode + ')',
+      {
+        htmlBody: htmlBody,
+        name: 'Digitalwerk24 System',
+        replyTo: email
+      }
+    );
+
+    Logger.log('DW24: Gewerbeanmeldung hochgeladen fuer ' + partnerCode + ' → ' + fileUrl);
+
+    return jsonResponse({
+      success: true,
+      message: 'Gewerbeanmeldung erfolgreich hochgeladen.',
+      fileUrl: fileUrl
+    });
+
+  } catch (uploadError) {
+    Logger.log('DW24: Gewerbeanmeldung Upload-Fehler fuer ' + code + ': ' + uploadError.message);
+    return jsonResponse({
+      success: false,
+      message: 'Fehler beim Hochladen: ' + uploadError.message
+    });
+  }
 }
 
 // ============================================================

@@ -650,6 +650,166 @@
             margin-top: 16px;
         }
 
+        /* Gewerbeanmeldung-Upload */
+        .gewerbe-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9375rem;
+        }
+
+        .gewerbe-status.complete {
+            background: var(--success-bg);
+            color: #166534;
+        }
+
+        .gewerbe-status.missing {
+            background: var(--warning-bg);
+            color: #854D0E;
+        }
+
+        .gewerbe-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+
+        .gewerbe-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(249, 115, 22, 0.04);
+        }
+
+        .gewerbe-upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(249, 115, 22, 0.08);
+        }
+
+        .gewerbe-upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .gewerbe-upload-text {
+            font-size: 0.9375rem;
+            color: var(--gray);
+            margin-bottom: 4px;
+        }
+
+        .gewerbe-upload-hint {
+            font-size: 0.8125rem;
+            color: #94A3B8;
+        }
+
+        .gewerbe-file-info {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .gewerbe-file-info.visible {
+            display: flex;
+        }
+
+        .gewerbe-file-name {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--dark);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gewerbe-file-size {
+            font-size: 0.8125rem;
+            color: var(--gray);
+        }
+
+        .gewerbe-file-remove {
+            background: none;
+            border: none;
+            color: #DC2626;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .gewerbe-upload-btn {
+            background: var(--gradient);
+            color: var(--white);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            display: none;
+            margin-top: 16px;
+        }
+
+        .gewerbe-upload-btn.visible {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gewerbe-upload-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .gewerbe-upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .gewerbe-success {
+            display: none;
+            background: var(--success-bg);
+            color: #166534;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-top: 16px;
+        }
+
+        .gewerbe-error {
+            display: none;
+            background: #FEF2F2;
+            color: #DC2626;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-top: 16px;
+        }
+
+        .gewerbe-view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .gewerbe-view-link:hover {
+            text-decoration: underline;
+        }
+
         /* Provisionen-Tabelle */
         .provision-table {
             width: 100%;
@@ -1081,6 +1241,48 @@
             </div>
         </div>
 
+        <!-- Gewerbeanmeldung -->
+        <div class="section-card">
+            <h3 class="section-card-title">&#128196; Gewerbeanmeldung</h3>
+
+            <div class="gewerbe-status complete" id="gewerbeStatusComplete" style="display: none;">
+                &#10004; Gewerbeanmeldung hochgeladen am <span id="gewerbeDatum"></span>
+            </div>
+            <div class="gewerbe-status missing" id="gewerbeStatusMissing" style="display: none;">
+                &#9888;&#65039; Eine Gewerbeanmeldung ist Voraussetzung fuer die Teilnahme. Bitte lade dein Dokument hier hoch.
+            </div>
+
+            <!-- Upload-Bereich -->
+            <div id="gewerbeUploadArea" class="gewerbe-upload-area" style="display: none;">
+                <div class="gewerbe-upload-icon">&#128194;</div>
+                <div class="gewerbe-upload-text">Datei hierher ziehen oder klicken</div>
+                <div class="gewerbe-upload-hint">PDF, PNG oder JPG – max. 5 MB</div>
+                <input type="file" id="gewerbeFileInput" accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+            </div>
+
+            <!-- Datei-Info nach Auswahl -->
+            <div class="gewerbe-file-info" id="gewerbeFileInfo">
+                <span class="gewerbe-file-name" id="gewerbeFileName"></span>
+                <span class="gewerbe-file-size" id="gewerbeFileSize"></span>
+                <button type="button" class="gewerbe-file-remove" id="gewerbeFileRemove" title="Datei entfernen">&#10005;</button>
+            </div>
+
+            <!-- Upload-Button -->
+            <button type="button" class="gewerbe-upload-btn" id="gewerbeUploadBtn" onclick="uploadGewerbeanmeldung()">Hochladen</button>
+
+            <!-- Erfolgs-/Fehlermeldung -->
+            <div class="gewerbe-success" id="gewerbeSuccess" style="display: none;"></div>
+            <div class="gewerbe-error" id="gewerbeError" style="display: none;"></div>
+
+            <!-- Link zum Dokument -->
+            <a class="gewerbe-view-link" id="gewerbeViewLink" href="#" target="_blank" rel="noopener" style="display: none;">
+                &#128196; Dokument ansehen &rarr;
+            </a>
+
+            <!-- Erneut hochladen -->
+            <button type="button" class="gewerbe-upload-btn" id="gewerbeReuploadBtn" onclick="showGewerbeUpload()" style="display: none;">Erneut hochladen</button>
+        </div>
+
         <!-- Bankdaten -->
         <div class="section-card">
             <h3 class="section-card-title">&#127974; Bankdaten fuer Auszahlung</h3>
@@ -1246,7 +1448,7 @@
             </p>
             <p>
                 <strong>Vertreten durch:</strong><br>
-                Manuel Horn, Geschäftsführer der Revis-1 LLC
+                Revis-1 LLC
             </p>
             <p>
                 <strong>Kontakt:</strong><br>
@@ -1263,7 +1465,7 @@
             </p>
             <p>
                 <strong>Verantwortlich für den Inhalt gemäß &sect; 18 Abs. 2 MStV:</strong><br>
-                Manuel Horn<br>
+                Manuele Fink<br>
                 Anschrift wie oben
             </p>
 
@@ -1293,7 +1495,12 @@
             <p>Revis-1 LLC / Digitalwerk24<br>2645 Executive Park Dr, 33331 Weston FL, USA<br>E-Mail: partner@digitalwerk24.com</p>
 
             <h3>2. Vertreter in der EU (Art. 27 DSGVO)</h3>
-            <p>Da der Verantwortliche seinen Sitz außerhalb der EU hat, wird derzeit ein Vertreter gemäß Art. 27 DSGVO bestellt. Die Angaben werden an dieser Stelle ergänzt, sobald die Bestellung abgeschlossen ist. Bis dahin wenden Sie sich bitte direkt an partner@digitalwerk24.com.</p>
+            <p>
+                Manuele Fink<br>
+                2645 Executive Park Dr<br>
+                33331 Weston FL, USA<br>
+                E-Mail: partner@digitalwerk24.com
+            </p>
 
             <h3>3. Erhebung und Verarbeitung personenbezogener Daten</h3>
             <p>Wenn Sie sich über unser Anmeldeformular als Empfehlungspartner registrieren, erheben wir folgende Daten:</p>
@@ -1558,8 +1765,54 @@
             // Empfehlungen anzeigen
             renderReferrals(data.empfehlungen || []);
 
+            // Gewerbeanmeldung-Status
+            renderGewerbeStatus(data);
+
             // Bankdaten-Status
             renderBankStatus(data);
+        }
+
+        // ===== Gewerbeanmeldung-Status rendern =====
+        function renderGewerbeStatus(data) {
+            const completeEl = document.getElementById('gewerbeStatusComplete');
+            const missingEl = document.getElementById('gewerbeStatusMissing');
+            const uploadArea = document.getElementById('gewerbeUploadArea');
+            const viewLink = document.getElementById('gewerbeViewLink');
+            const reuploadBtn = document.getElementById('gewerbeReuploadBtn');
+
+            if (data.gewerbeanmeldungUrl) {
+                // Gewerbeanmeldung vorhanden
+                completeEl.style.display = 'flex';
+                missingEl.style.display = 'none';
+                uploadArea.style.display = 'none';
+
+                // Datum anzeigen
+                if (data.gewerbeanmeldungDatum) {
+                    let datum = data.gewerbeanmeldungDatum;
+                    // Falls ISO-Format, in deutsches Format umwandeln
+                    if (datum.includes('T') || datum.includes('-')) {
+                        datum = new Date(datum).toLocaleDateString('de-DE');
+                    }
+                    document.getElementById('gewerbeDatum').textContent = datum;
+                }
+
+                // Drive-Link anzeigen
+                viewLink.href = data.gewerbeanmeldungUrl;
+                viewLink.style.display = 'inline-flex';
+
+                // Erneut hochladen Button
+                reuploadBtn.style.display = 'inline-flex';
+            } else {
+                // Gewerbeanmeldung fehlt
+                completeEl.style.display = 'none';
+                missingEl.style.display = 'flex';
+                uploadArea.style.display = 'block';
+                viewLink.style.display = 'none';
+                reuploadBtn.style.display = 'none';
+            }
+
+            // Upload-Bereich initialisieren
+            initGewerbeUpload();
         }
 
         function formatEuro(amount) {
@@ -1707,6 +1960,186 @@
                 bicGroup.style.display = 'block';
                 paypalGroup.style.display = 'none';
             }
+        }
+
+        // ===== Gewerbeanmeldung Upload =====
+        let gewerbeSelectedFile = null;
+
+        // Upload-Bereich initialisieren (Drag & Drop + Click)
+        function initGewerbeUpload() {
+            const uploadArea = document.getElementById('gewerbeUploadArea');
+            const fileInput = document.getElementById('gewerbeFileInput');
+            const fileInfo = document.getElementById('gewerbeFileInfo');
+            const uploadBtn = document.getElementById('gewerbeUploadBtn');
+
+            // Klick oeffnet Dateiauswahl
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // Datei ausgewaehlt
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleGewerbeFile(e.target.files[0]);
+                }
+            });
+
+            // Drag & Drop
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    handleGewerbeFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // Datei entfernen
+            document.getElementById('gewerbeFileRemove').addEventListener('click', function() {
+                gewerbeSelectedFile = null;
+                fileInput.value = '';
+                fileInfo.classList.remove('visible');
+                uploadBtn.classList.remove('visible');
+            });
+        }
+
+        // Datei validieren und anzeigen
+        function handleGewerbeFile(file) {
+            const errorEl = document.getElementById('gewerbeError');
+            errorEl.style.display = 'none';
+
+            // Dateityp pruefen
+            const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+            if (!allowedTypes.includes(file.type)) {
+                errorEl.textContent = 'Nur PDF, PNG oder JPG Dateien erlaubt.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            // Groesse pruefen (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                errorEl.textContent = 'Die Datei darf maximal 5 MB gross sein.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            gewerbeSelectedFile = file;
+
+            // Dateiinfo anzeigen
+            document.getElementById('gewerbeFileName').textContent = escapeHtml(file.name);
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            document.getElementById('gewerbeFileSize').textContent = sizeMB + ' MB';
+            document.getElementById('gewerbeFileInfo').classList.add('visible');
+            document.getElementById('gewerbeUploadBtn').classList.add('visible');
+        }
+
+        // Upload-Bereich anzeigen (fuer "Erneut hochladen")
+        function showGewerbeUpload() {
+            document.getElementById('gewerbeUploadArea').style.display = 'block';
+            document.getElementById('gewerbeReuploadBtn').style.display = 'none';
+            document.getElementById('gewerbeSuccess').style.display = 'none';
+            document.getElementById('gewerbeError').style.display = 'none';
+
+            // Vorherige Auswahl zuruecksetzen
+            gewerbeSelectedFile = null;
+            document.getElementById('gewerbeFileInput').value = '';
+            document.getElementById('gewerbeFileInfo').classList.remove('visible');
+            document.getElementById('gewerbeUploadBtn').classList.remove('visible');
+        }
+
+        // Datei hochladen
+        async function uploadGewerbeanmeldung() {
+            if (!gewerbeSelectedFile) return;
+
+            const uploadBtn = document.getElementById('gewerbeUploadBtn');
+            const successEl = document.getElementById('gewerbeSuccess');
+            const errorEl = document.getElementById('gewerbeError');
+
+            successEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Wird hochgeladen...';
+
+            const credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
+
+            try {
+                // Datei als Base64 lesen
+                const base64Data = await new Promise(function(resolve, reject) {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        // DataURL Format: data:mime;base64,XXXXX – nur den Base64-Teil extrahieren
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = function() { reject(new Error('Datei konnte nicht gelesen werden.')); };
+                    reader.readAsDataURL(gewerbeSelectedFile);
+                });
+
+                // An Apps Script senden
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'uploadGewerbeanmeldung',
+                        email: credentials.email,
+                        code: credentials.code,
+                        filename: gewerbeSelectedFile.name,
+                        fileContent: base64Data,
+                        mimeType: gewerbeSelectedFile.type
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Erfolg anzeigen
+                    successEl.textContent = 'Gewerbeanmeldung erfolgreich hochgeladen!';
+                    successEl.style.display = 'block';
+
+                    // Status aktualisieren
+                    document.getElementById('gewerbeStatusComplete').style.display = 'flex';
+                    document.getElementById('gewerbeStatusMissing').style.display = 'none';
+
+                    const heute = new Date().toLocaleDateString('de-DE');
+                    document.getElementById('gewerbeDatum').textContent = heute;
+
+                    // Upload-Bereich ausblenden
+                    document.getElementById('gewerbeUploadArea').style.display = 'none';
+                    document.getElementById('gewerbeFileInfo').classList.remove('visible');
+                    uploadBtn.classList.remove('visible');
+
+                    // Drive-Link anzeigen
+                    if (result.fileUrl) {
+                        const viewLink = document.getElementById('gewerbeViewLink');
+                        viewLink.href = result.fileUrl;
+                        viewLink.style.display = 'inline-flex';
+                    }
+
+                    // Erneut-hochladen-Button anzeigen
+                    document.getElementById('gewerbeReuploadBtn').style.display = 'inline-flex';
+
+                    // Partner-Daten aktualisieren
+                    currentPartner.gewerbeanmeldungUrl = result.fileUrl;
+                    currentPartner.gewerbeanmeldungDatum = heute;
+                } else {
+                    errorEl.textContent = result.message || 'Fehler beim Hochladen. Bitte versuche es erneut.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Upload-Fehler:', error);
+                errorEl.textContent = 'Verbindungsfehler. Bitte versuche es spaeter erneut.';
+                errorEl.style.display = 'block';
+            }
+
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Hochladen';
+            gewerbeSelectedFile = null;
         }
 
         // ===== Bankdaten speichern =====
