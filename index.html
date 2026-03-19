@@ -2281,6 +2281,15 @@
                     console.warn('Web3Forms-Fehler:', emailErr);
                 }
 
+                // ---- GA4 Conversion-Event: Registrierung ----
+                if (typeof gtag === 'function') {
+                    gtag('event', 'sign_up', {
+                        method: 'empfehlungsprogramm',
+                        event_category: 'conversion',
+                        event_label: sheetResult.empfehlungscode || 'unbekannt'
+                    });
+                }
+
                 // ---- Erfolgsseite anzeigen (DOI-Hinweis) ----
                 document.getElementById('formContent').style.display = 'none';
                 document.getElementById('successTitle').textContent = 'Fast geschafft, ' + vorname + '!';
