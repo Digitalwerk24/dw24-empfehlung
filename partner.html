@@ -393,6 +393,56 @@
             gap: 8px;
         }
 
+        /* Konto-Daten Anzeige */
+        .account-data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .account-data-grid { grid-template-columns: 1fr; }
+        }
+        .account-data-item {
+            padding: 12px 16px;
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .account-data-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .account-data-value {
+            display: block;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        /* Bankdaten Anzeige */
+        .bank-data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .bank-data-grid { grid-template-columns: 1fr; }
+        }
+        .bank-data-item {
+            padding: 12px 16px;
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .bank-data-item.full-width {
+            grid-column: 1 / -1;
+        }
+
         .referral-list {
             list-style: none;
         }
@@ -1178,6 +1228,83 @@
             </div>
         </div>
 
+        <!-- Konto / Persoenliche Daten -->
+        <div class="section-card" id="accountSection">
+            <h3 class="section-card-title">&#128100; Konto</h3>
+
+            <!-- Anzeige-Modus -->
+            <div id="accountDisplay">
+                <div class="account-data-grid">
+                    <div class="account-data-item">
+                        <span class="account-data-label">Vorname</span>
+                        <span class="account-data-value" id="accVorname">—</span>
+                    </div>
+                    <div class="account-data-item">
+                        <span class="account-data-label">Nachname</span>
+                        <span class="account-data-value" id="accNachname">—</span>
+                    </div>
+                    <div class="account-data-item">
+                        <span class="account-data-label">E-Mail</span>
+                        <span class="account-data-value" id="accEmail">—</span>
+                    </div>
+                    <div class="account-data-item">
+                        <span class="account-data-label">Telefon</span>
+                        <span class="account-data-value" id="accTelefon">—</span>
+                    </div>
+                    <div class="account-data-item">
+                        <span class="account-data-label">Firma / Unternehmen</span>
+                        <span class="account-data-value" id="accFirma">—</span>
+                    </div>
+                    <div class="account-data-item">
+                        <span class="account-data-label">Steuernummer / USt-IdNr.</span>
+                        <span class="account-data-value" id="accSteuernr">—</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="button" class="save-btn" onclick="toggleAccountEdit(true)" style="background: var(--dark);">&#9998; Daten bearbeiten</button>
+                </div>
+            </div>
+
+            <!-- Bearbeiten-Modus -->
+            <div id="accountEdit" style="display: none;">
+                <form id="accountForm" onsubmit="saveProfile(event)">
+                    <div class="bank-form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="editVorname">Vorname *</label>
+                            <input type="text" id="editVorname" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editNachname">Nachname *</label>
+                            <input type="text" id="editNachname" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editEmail">E-Mail</label>
+                            <input type="email" id="editEmail" class="form-input" disabled style="opacity: 0.6; cursor: not-allowed;">
+                            <span style="font-size: 0.75rem; color: var(--gray-light);">E-Mail kann nicht geaendert werden.</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editTelefon">Telefon</label>
+                            <input type="tel" id="editTelefon" class="form-input" placeholder="+49 170 1234567">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editFirma">Firma / Unternehmen *</label>
+                            <input type="text" id="editFirma" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editSteuernr">Steuernummer / USt-IdNr. *</label>
+                            <input type="text" id="editSteuernr" class="form-input" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; gap: 12px;">
+                        <button type="submit" class="save-btn" id="saveProfileBtn">Aenderungen speichern</button>
+                        <button type="button" class="cancel-btn" onclick="toggleAccountEdit(false)">Abbrechen</button>
+                    </div>
+                    <div class="bank-success" id="profileSuccess">&#10004; Deine Daten wurden erfolgreich aktualisiert.</div>
+                    <div class="bank-error" id="profileError"></div>
+                </form>
+            </div>
+        </div>
+
         <!-- Neue Empfehlung eintragen / bearbeiten -->
         <div class="section-card" id="referralFormCard">
             <h3 class="section-card-title" id="referralFormTitle">&#10133; Neue Empfehlung eintragen</h3>
@@ -1298,84 +1425,107 @@
                 &#128196; Wir erstellen deine Provisionsabrechnung automatisch als Gutschrift gem. &sect; 14 Abs. 2 UStG. Stelle sicher, dass Firma, Adresse und Steuernummer korrekt sind.
             </p>
 
-            <form id="bankForm" onsubmit="saveBankData(event)">
-                <div class="bank-form-grid">
-                    <div class="form-group full-width">
-                        <label class="form-label" for="bankMethode">Bevorzugte Auszahlungsmethode</label>
-                        <select id="bankMethode" class="form-select" required>
-                            <option value="">Bitte waehlen...</option>
-                            <option value="Ueberweisung">Ueberweisung (SEPA)</option>
-                            <option value="PayPal">PayPal</option>
-                        </select>
+            <!-- Bankdaten Anzeige-Modus -->
+            <div id="bankDisplay" style="display: none;">
+                <div class="bank-data-grid">
+                    <div class="bank-data-item">
+                        <span class="account-data-label">IBAN</span>
+                        <span class="account-data-value" id="bankDispIban">—</span>
                     </div>
-
-                    <div class="form-group" id="ibanGroup">
-                        <label class="form-label" for="bankIban">IBAN</label>
-                        <input type="text" id="bankIban" class="form-input" placeholder="DE89 3704 0044 0532 0130 00" autocomplete="off">
+                    <div class="bank-data-item">
+                        <span class="account-data-label">BIC/SWIFT</span>
+                        <span class="account-data-value" id="bankDispBic">—</span>
                     </div>
-
-                    <div class="form-group" id="bicGroup">
-                        <label class="form-label" for="bankBic">BIC/SWIFT (optional)</label>
-                        <input type="text" id="bankBic" class="form-input" placeholder="COBADEFFXXX" autocomplete="off">
+                    <div class="bank-data-item">
+                        <span class="account-data-label">Firma</span>
+                        <span class="account-data-value" id="bankDispFirma">—</span>
                     </div>
-
-                    <div class="form-group full-width" id="paypalGroup" style="display: none;">
-                        <label class="form-label" for="bankPaypal">PayPal E-Mail-Adresse</label>
-                        <input type="email" id="bankPaypal" class="form-input" placeholder="deine@paypal-email.de" autocomplete="off">
+                    <div class="bank-data-item">
+                        <span class="account-data-label">Adresse</span>
+                        <span class="account-data-value" id="bankDispAdresse">—</span>
                     </div>
-
-                    <div class="form-group full-width">
-                        <label class="form-label" for="bankFirma">Firma / Unternehmen</label>
-                        <input type="text" id="bankFirma" class="form-input" placeholder="z.B. Mustermann Marketing GbR" required>
+                    <div class="bank-data-item">
+                        <span class="account-data-label">Steuernummer / USt-IdNr.</span>
+                        <span class="account-data-value" id="bankDispSteuer">—</span>
                     </div>
-
-                    <div class="form-group full-width">
-                        <label class="form-label" for="bankStrasse">Stra&szlig;e + Hausnummer</label>
-                        <input type="text" id="bankStrasse" class="form-input" placeholder="Musterstra&szlig;e 1a" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="bankPlz">PLZ</label>
-                        <input type="text" id="bankPlz" class="form-input" placeholder="12345" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="bankOrt">Ort</label>
-                        <input type="text" id="bankOrt" class="form-input" placeholder="Musterstadt" required>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label class="form-label" for="bankLand">Land</label>
-                        <select id="bankLand" class="form-select" required>
-                            <option value="">Bitte waehlen...</option>
-                            <option value="Deutschland" selected>Deutschland</option>
-                            <option value="Oesterreich">&Ouml;sterreich</option>
-                            <option value="Schweiz">Schweiz</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="bankSteuer">Steuernummer / USt-IdNr.</label>
-                        <input type="text" id="bankSteuer" class="form-input" placeholder="z.B. 12/345/67890" autocomplete="off" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="bankArt">Art der Taetigkeit</label>
-                        <select id="bankArt" class="form-select" required>
-                            <option value="">Bitte waehlen...</option>
-                            <option value="Privat">Privat</option>
-                            <option value="Gewerblich">Gewerblich / Freiberuflich</option>
-                        </select>
+                    <div class="bank-data-item">
+                        <span class="account-data-label">Art der Taetigkeit</span>
+                        <span class="account-data-value" id="bankDispArt">—</span>
                     </div>
                 </div>
-
-                <div style="margin-top: 24px;">
-                    <button type="submit" class="save-btn" id="saveBankBtn">Bankdaten speichern</button>
+                <div style="margin-top: 20px;">
+                    <button type="button" class="save-btn" onclick="toggleBankEdit(true)" style="background: var(--dark);">&#9998; Bearbeiten</button>
                 </div>
+            </div>
 
-                <div class="bank-success" id="bankSuccess">&#10004; Deine Bankdaten wurden erfolgreich gespeichert.</div>
-                <div class="bank-error" id="bankError"></div>
-            </form>
+            <!-- Bankdaten Bearbeiten-Modus -->
+            <div id="bankEditForm">
+                <form id="bankForm" onsubmit="saveBankData(event)">
+                    <div class="bank-form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="bankIban">IBAN *</label>
+                            <input type="text" id="bankIban" class="form-input" placeholder="DE89 3704 0044 0532 0130 00" autocomplete="off" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="bankBic">BIC/SWIFT (optional)</label>
+                            <input type="text" id="bankBic" class="form-input" placeholder="COBADEFFXXX" autocomplete="off">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label" for="bankFirma">Firma / Unternehmen</label>
+                            <input type="text" id="bankFirma" class="form-input" placeholder="z.B. Mustermann Marketing GbR" required>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label" for="bankStrasse">Stra&szlig;e + Hausnummer</label>
+                            <input type="text" id="bankStrasse" class="form-input" placeholder="Musterstra&szlig;e 1a" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="bankPlz">PLZ</label>
+                            <input type="text" id="bankPlz" class="form-input" placeholder="12345" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="bankOrt">Ort</label>
+                            <input type="text" id="bankOrt" class="form-input" placeholder="Musterstadt" required>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label" for="bankLand">Land</label>
+                            <select id="bankLand" class="form-select" required>
+                                <option value="">Bitte waehlen...</option>
+                                <option value="Deutschland" selected>Deutschland</option>
+                                <option value="Oesterreich">&Ouml;sterreich</option>
+                                <option value="Schweiz">Schweiz</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="bankSteuer">Steuernummer / USt-IdNr.</label>
+                            <input type="text" id="bankSteuer" class="form-input" placeholder="z.B. 12/345/67890" autocomplete="off" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="bankArt">Art der Taetigkeit</label>
+                            <select id="bankArt" class="form-select" required>
+                                <option value="">Bitte waehlen...</option>
+                                <option value="Privat">Privat</option>
+                                <option value="Gewerblich">Gewerblich / Freiberuflich</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px; display: flex; gap: 12px;">
+                        <button type="submit" class="save-btn" id="saveBankBtn">Bankdaten speichern</button>
+                        <button type="button" class="cancel-btn" id="cancelBankBtn" onclick="toggleBankEdit(false)" style="display: none;">Abbrechen</button>
+                    </div>
+
+                    <div class="bank-success" id="bankSuccess">&#10004; Deine Bankdaten wurden erfolgreich gespeichert.</div>
+                    <div class="bank-error" id="bankError"></div>
+                </form>
+            </div>
         </div>
 
     </section>
@@ -1515,7 +1665,7 @@
                 <li>Version der Datenschutzerklärung und Teilnahmebedingungen zum Zeitpunkt der Anmeldung</li>
                 <li>Marketing-Einwilligung (ja/nein)</li>
             </ul>
-            <p>Im Rahmen der Provisionsabrechnung (Gutschriftverfahren) werden zusätzlich erhoben: Rechnungsadresse (Straße, PLZ, Ort, Land), Bankverbindung (IBAN oder PayPal-Adresse) sowie ggf. BIC/SWIFT.</p>
+            <p>Im Rahmen der Provisionsabrechnung (Gutschriftverfahren) werden zusätzlich erhoben: Rechnungsadresse (Straße, PLZ, Ort, Land), Bankverbindung (IBAN) sowie ggf. BIC/SWIFT.</p>
             <p>Diese Daten werden ausschließlich zur Abwicklung des Empfehlungsprogramms, zur Erstellung von Gutschriften gemäß &sect; 14 Abs. 2 UStG sowie zum Nachweis Ihrer Einwilligung (Art. 7 Abs. 1 DSGVO) verwendet.</p>
 
             <h3>4. Zwecke und Rechtsgrundlagen</h3>
@@ -1745,13 +1895,21 @@
             document.getElementById('dashVorname').textContent = data.vorname;
             document.getElementById('dashCode').textContent = data.empfehlungscode;
 
-            // Firma + Steuernummer anzeigen
+            // Firma + Steuernummer im Welcome-Bereich
             if (data.firma) {
                 document.getElementById('dashFirma').textContent = data.firma;
             }
             if (data.steuernr) {
                 document.getElementById('dashSteuernr').textContent = '| StNr./USt-ID: ' + data.steuernr;
             }
+
+            // Konto-Daten befuellen
+            document.getElementById('accVorname').textContent = data.vorname || '—';
+            document.getElementById('accNachname').textContent = data.nachname || '—';
+            document.getElementById('accEmail').textContent = data.email || '—';
+            document.getElementById('accTelefon').textContent = data.telefon || '—';
+            document.getElementById('accFirma').textContent = data.firma || '—';
+            document.getElementById('accSteuernr').textContent = data.steuernr || '—';
 
             // Statistiken
             document.getElementById('statEmpfehlungen').textContent = data.anzahlEmpfehlungen || 0;
@@ -1885,84 +2043,204 @@
         function renderBankStatus(data) {
             const complete = document.getElementById('bankStatusComplete');
             const missing = document.getElementById('bankStatusMissing');
+            const bankDisplay = document.getElementById('bankDisplay');
+            const bankEditForm = document.getElementById('bankEditForm');
 
-            if (data.iban || data.paypal) {
-                // Bankdaten vorhanden – Formular vorausfuellen
+            if (data.iban) {
+                // Bankdaten vorhanden – Anzeige-Modus
                 complete.style.display = 'flex';
                 missing.style.display = 'none';
+                bankDisplay.style.display = 'block';
+                bankEditForm.style.display = 'none';
+                document.getElementById('cancelBankBtn').style.display = 'inline-flex';
 
-                if (data.iban) {
-                    document.getElementById('bankMethode').value = 'Ueberweisung';
-                    document.getElementById('bankIban').value = data.iban;
-                    togglePaymentMethod();
-                } else if (data.paypal) {
-                    document.getElementById('bankMethode').value = 'PayPal';
-                    document.getElementById('bankPaypal').value = data.paypal;
-                    togglePaymentMethod();
-                }
+                // Anzeige-Felder befuellen
+                // IBAN maskieren (nur letzte 4 Zeichen sichtbar)
+                var ibanMasked = data.iban.length > 4 ? '••••' + data.iban.slice(-4) : data.iban;
+                document.getElementById('bankDispIban').textContent = ibanMasked;
+                document.getElementById('bankDispBic').textContent = data.bic || '—';
+                document.getElementById('bankDispFirma').textContent = data.firma || '—';
+                document.getElementById('bankDispSteuer').textContent = data.steuernr || '—';
+                document.getElementById('bankDispArt').textContent = data.art || '—';
 
-                if (data.steuernr) {
-                    document.getElementById('bankSteuer').value = data.steuernr;
-                }
-                if (data.firma) {
-                    document.getElementById('bankFirma').value = data.firma;
-                }
-                // Adresse parsen (altes Format: "Strasse\nPLZ Ort\nLand" oder strukturiert)
+                // Adresse formatieren
                 if (data.adresse) {
-                    var adresseTeile = data.adresse.split('\n');
-                    if (adresseTeile.length >= 2) {
-                        document.getElementById('bankStrasse').value = adresseTeile[0] || '';
-                        // PLZ und Ort aus zweiter Zeile extrahieren
-                        var plzOrt = (adresseTeile[1] || '').trim();
-                        var plzMatch = plzOrt.match(/^(\d{4,5})\s+(.*)/);
-                        if (plzMatch) {
-                            document.getElementById('bankPlz').value = plzMatch[1];
-                            document.getElementById('bankOrt').value = plzMatch[2];
-                        } else {
-                            document.getElementById('bankOrt').value = plzOrt;
-                        }
-                        if (adresseTeile[2]) {
-                            var land = adresseTeile[2].trim();
-                            if (land.match(/oesterreich|österreich/i)) document.getElementById('bankLand').value = 'Oesterreich';
-                            else if (land.match(/schweiz/i)) document.getElementById('bankLand').value = 'Schweiz';
-                            else document.getElementById('bankLand').value = 'Deutschland';
-                        }
-                    } else {
-                        // Fallback: gesamte Adresse in Strasse-Feld
-                        document.getElementById('bankStrasse').value = data.adresse;
-                    }
+                    document.getElementById('bankDispAdresse').textContent = data.adresse.replace(/\n/g, ', ');
+                } else {
+                    document.getElementById('bankDispAdresse').textContent = '—';
                 }
-                if (data.art) {
-                    document.getElementById('bankArt').value = data.art;
-                }
-                if (data.bic) {
-                    document.getElementById('bankBic').value = data.bic;
-                }
+
+                // Formular-Felder vorausfuellen (fuer Bearbeitung)
+                fillBankForm(data);
             } else {
-                // Keine Bankdaten – Hinweis anzeigen
+                // Keine Bankdaten – Formular direkt anzeigen
                 complete.style.display = 'none';
                 missing.style.display = 'flex';
+                bankDisplay.style.display = 'none';
+                bankEditForm.style.display = 'block';
+                document.getElementById('cancelBankBtn').style.display = 'none';
+
+                // Firma und Steuernr aus Profildaten vorausfuellen
+                if (data.firma) document.getElementById('bankFirma').value = data.firma;
+                if (data.steuernr) document.getElementById('bankSteuer').value = data.steuernr;
             }
         }
 
-        // ===== Zahlungsmethode umschalten =====
-        document.getElementById('bankMethode').addEventListener('change', togglePaymentMethod);
+        // Bankdaten-Formular vorausfuellen
+        function fillBankForm(data) {
+            document.getElementById('bankIban').value = data.iban || '';
+            document.getElementById('bankBic').value = data.bic || '';
+            if (data.steuernr) document.getElementById('bankSteuer').value = data.steuernr;
+            if (data.firma) document.getElementById('bankFirma').value = data.firma;
+            if (data.art) document.getElementById('bankArt').value = data.art;
 
-        function togglePaymentMethod() {
-            const methode = document.getElementById('bankMethode').value;
-            const ibanGroup = document.getElementById('ibanGroup');
-            const bicGroup = document.getElementById('bicGroup');
-            const paypalGroup = document.getElementById('paypalGroup');
-
-            if (methode === 'PayPal') {
-                ibanGroup.style.display = 'none';
-                bicGroup.style.display = 'none';
-                paypalGroup.style.display = 'block';
-            } else {
-                ibanGroup.style.display = 'block';
-                bicGroup.style.display = 'block';
-                paypalGroup.style.display = 'none';
+            // Adresse parsen
+            if (data.adresse) {
+                var adresseTeile = data.adresse.split('\n');
+                if (adresseTeile.length >= 2) {
+                    document.getElementById('bankStrasse').value = adresseTeile[0] || '';
+                    var plzOrt = (adresseTeile[1] || '').trim();
+                    var plzMatch = plzOrt.match(/^(\d{4,5})\s+(.*)/);
+                    if (plzMatch) {
+                        document.getElementById('bankPlz').value = plzMatch[1];
+                        document.getElementById('bankOrt').value = plzMatch[2];
+                    } else {
+                        document.getElementById('bankOrt').value = plzOrt;
+                    }
+                    if (adresseTeile[2]) {
+                        var land = adresseTeile[2].trim();
+                        if (land.match(/oesterreich|österreich/i)) document.getElementById('bankLand').value = 'Oesterreich';
+                        else if (land.match(/schweiz/i)) document.getElementById('bankLand').value = 'Schweiz';
+                        else document.getElementById('bankLand').value = 'Deutschland';
+                    }
+                } else {
+                    document.getElementById('bankStrasse').value = data.adresse;
+                }
             }
+        }
+
+        // ===== Bankdaten Bearbeiten umschalten =====
+        function toggleBankEdit(showEdit) {
+            var bankDisplay = document.getElementById('bankDisplay');
+            var bankEditForm = document.getElementById('bankEditForm');
+            var bankSuccess = document.getElementById('bankSuccess');
+            var bankError = document.getElementById('bankError');
+
+            bankSuccess.style.display = 'none';
+            bankError.style.display = 'none';
+
+            if (showEdit) {
+                bankDisplay.style.display = 'none';
+                bankEditForm.style.display = 'block';
+            } else {
+                bankDisplay.style.display = 'block';
+                bankEditForm.style.display = 'none';
+            }
+        }
+
+        // ===== Konto-Daten Bearbeiten umschalten =====
+        function toggleAccountEdit(showEdit) {
+            var accountDisplay = document.getElementById('accountDisplay');
+            var accountEdit = document.getElementById('accountEdit');
+            var profileSuccess = document.getElementById('profileSuccess');
+            var profileError = document.getElementById('profileError');
+
+            profileSuccess.style.display = 'none';
+            profileError.style.display = 'none';
+
+            if (showEdit) {
+                // Formular-Felder mit aktuellen Werten befuellen
+                document.getElementById('editVorname').value = currentPartner.vorname || '';
+                document.getElementById('editNachname').value = currentPartner.nachname || '';
+                document.getElementById('editEmail').value = currentPartner.email || '';
+                document.getElementById('editTelefon').value = currentPartner.telefon || '';
+                document.getElementById('editFirma').value = currentPartner.firma || '';
+                document.getElementById('editSteuernr').value = currentPartner.steuernr || '';
+
+                accountDisplay.style.display = 'none';
+                accountEdit.style.display = 'block';
+            } else {
+                accountDisplay.style.display = 'block';
+                accountEdit.style.display = 'none';
+            }
+        }
+
+        // ===== Profildaten speichern =====
+        async function saveProfile(e) {
+            e.preventDefault();
+
+            var btn = document.getElementById('saveProfileBtn');
+            var successEl = document.getElementById('profileSuccess');
+            var errorEl = document.getElementById('profileError');
+
+            successEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Wird gespeichert...';
+
+            var credentials = JSON.parse(sessionStorage.getItem('dw24_partner'));
+
+            var profileData = {
+                action: 'updateProfile',
+                email: credentials.email,
+                code: credentials.code,
+                vorname: document.getElementById('editVorname').value.trim(),
+                nachname: document.getElementById('editNachname').value.trim(),
+                telefon: document.getElementById('editTelefon').value.trim(),
+                firma: document.getElementById('editFirma').value.trim(),
+                steuernr: document.getElementById('editSteuernr').value.trim()
+            };
+
+            try {
+                var response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(profileData)
+                });
+
+                var result = await response.json();
+
+                if (result.success) {
+                    successEl.style.display = 'block';
+
+                    // currentPartner aktualisieren
+                    currentPartner.vorname = profileData.vorname;
+                    currentPartner.nachname = profileData.nachname;
+                    currentPartner.telefon = profileData.telefon;
+                    currentPartner.firma = profileData.firma;
+                    currentPartner.steuernr = profileData.steuernr;
+
+                    // Anzeige aktualisieren
+                    document.getElementById('accVorname').textContent = profileData.vorname || '—';
+                    document.getElementById('accNachname').textContent = profileData.nachname || '—';
+                    document.getElementById('accTelefon').textContent = profileData.telefon || '—';
+                    document.getElementById('accFirma').textContent = profileData.firma || '—';
+                    document.getElementById('accSteuernr').textContent = profileData.steuernr || '—';
+
+                    // Welcome-Bereich aktualisieren
+                    document.getElementById('dashVorname').textContent = profileData.vorname;
+                    document.getElementById('dashFirma').textContent = profileData.firma;
+                    if (profileData.steuernr) {
+                        document.getElementById('dashSteuernr').textContent = '| StNr./USt-ID: ' + profileData.steuernr;
+                    }
+
+                    // Header-Name aktualisieren
+                    var nameEl = document.getElementById('headerPartnerName');
+                    nameEl.textContent = profileData.vorname + ' ' + profileData.nachname;
+
+                    // Nach 2 Sekunden zurueck zur Anzeige
+                    setTimeout(function() { toggleAccountEdit(false); }, 2000);
+                } else {
+                    errorEl.textContent = result.message || 'Fehler beim Speichern. Bitte versuche es erneut.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Profil-Fehler:', error);
+                errorEl.textContent = 'Verbindungsfehler. Bitte versuche es spaeter erneut.';
+                errorEl.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Aenderungen speichern';
         }
 
         // ===== Gewerbeanmeldung Upload =====
@@ -2171,26 +2449,18 @@
                 action: 'saveBankData',
                 email: credentials.email,
                 code: credentials.code,
-                methode: document.getElementById('bankMethode').value,
+                methode: 'Ueberweisung',
                 iban: document.getElementById('bankIban').value.trim(),
                 bic: document.getElementById('bankBic').value.trim(),
-                paypal: document.getElementById('bankPaypal').value.trim(),
                 firma: document.getElementById('bankFirma').value.trim(),
                 adresse: adresseStr,
                 steuernr: document.getElementById('bankSteuer').value.trim(),
                 art: document.getElementById('bankArt').value
             };
 
-            // Validierung: je nach Methode IBAN oder PayPal-E-Mail pruefen
-            if (bankData.methode === 'Ueberweisung' && !bankData.iban) {
+            // Validierung: IBAN ist Pflichtfeld
+            if (!bankData.iban) {
                 bankError.textContent = 'Bitte gib deine IBAN ein.';
-                bankError.style.display = 'block';
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Bankdaten speichern';
-                return;
-            }
-            if (bankData.methode === 'PayPal' && !bankData.paypal) {
-                bankError.textContent = 'Bitte gib deine PayPal E-Mail-Adresse ein.';
                 bankError.style.display = 'block';
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Bankdaten speichern';
@@ -2211,11 +2481,25 @@
                     document.getElementById('bankStatusMissing').style.display = 'none';
 
                     // currentPartner aktualisieren
-                    if (bankData.methode === 'Ueberweisung') {
-                        currentPartner.iban = bankData.iban;
-                    } else {
-                        currentPartner.paypal = bankData.paypal;
-                    }
+                    currentPartner.iban = bankData.iban;
+                    currentPartner.bic = bankData.bic;
+                    currentPartner.firma = bankData.firma;
+                    currentPartner.steuernr = bankData.steuernr;
+                    currentPartner.art = bankData.art;
+                    currentPartner.adresse = adresseStr;
+
+                    // Anzeige-Felder aktualisieren
+                    var ibanMasked = bankData.iban.length > 4 ? '••••' + bankData.iban.slice(-4) : bankData.iban;
+                    document.getElementById('bankDispIban').textContent = ibanMasked;
+                    document.getElementById('bankDispBic').textContent = bankData.bic || '—';
+                    document.getElementById('bankDispFirma').textContent = bankData.firma || '—';
+                    document.getElementById('bankDispSteuer').textContent = bankData.steuernr || '—';
+                    document.getElementById('bankDispArt').textContent = bankData.art || '—';
+                    document.getElementById('bankDispAdresse').textContent = adresseStr.replace(/\n/g, ', ');
+
+                    // Nach 2 Sekunden zur Anzeige wechseln
+                    document.getElementById('cancelBankBtn').style.display = 'inline-flex';
+                    setTimeout(function() { toggleBankEdit(false); }, 2000);
                 } else {
                     bankError.textContent = result.message || 'Fehler beim Speichern. Bitte versuche es erneut.';
                     bankError.style.display = 'block';

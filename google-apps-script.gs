@@ -1,5 +1,5 @@
 /**
- * DW24 Empfehlungsprogramm – Google Apps Script (v4.5 mit Gewerbeanmeldung-Upload)
+ * DW24 Empfehlungsprogramm – Google Apps Script (v5.0 mit HubSpot CRM Integration)
  *
  * Funktionen:
  * - doPost(e): Zentraler POST-Endpoint mit Action-Routing:
@@ -39,12 +39,157 @@ const SHEET_ID = '1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs';
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd9WOmH_foMe6oDW3XcUjpcX3n97x1QoG5qOIFvjYWkFagVUQ/viewform';
 const FORM_ENTRY_EMPFEHLUNGSCODE = '1708813850';
 
+// ===== HUBSPOT CRM INTEGRATION (v5.0) =====
+var HUBSPOT_TOKEN = PropertiesService.getScriptProperties().getProperty('HUBSPOT_TOKEN'); // Im Apps Script Editor unter Projekteinstellungen → Script-Eigenschaften setzen
+var HUBSPOT_API = 'https://api.hubapi.com';
+
+// ===== HUBSPOT FUNKTIONEN =====
+
+/**
+ * HubSpot Kontakt erstellen (Typ: Partner)
+ * Wird bei Partner-Registrierung aufgerufen
+ */
+function createHubSpotContact(partnerData) {
+  try {
+    var url = HUBSPOT_API + '/crm/v3/objects/contacts';
+    var properties = {
+      'firstname': partnerData.vorname || '',
+      'lastname': partnerData.nachname || '',
+      'email': partnerData.email,
+      'phone': partnerData.telefon || '',
+      'kontakttyp': 'Partner',
+      'partner_code': partnerData.partnerId || '',
+      'partner_status': 'pending',
+      'lead_quelle': 'Empfehlungsprogramm',
+      'registrierungsdatum_partner': new Date().toISOString().split('T')[0],
+      'hubspot_owner_id': '89219995'
+    };
+    if (partnerData.steuernummer) properties['steuernummer'] = partnerData.steuernummer;
+
+    var options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+      payload: JSON.stringify({ properties: properties }),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(url, options);
+    var statusCode = response.getResponseCode();
+    var responseBody = JSON.parse(response.getContentText());
+
+    Logger.log('HubSpot createContact (' + statusCode + '): ' + JSON.stringify(responseBody));
+
+    if (statusCode === 201) {
+      return { success: true, hubspotId: responseBody.id };
+    } else if (statusCode === 409) {
+      // Duplikat — Kontakt existieren bereits, aktualisieren
+      var existingId = responseBody.message.match(/Existing ID: (\d+)/);
+      if (existingId && existingId[1]) {
+        return updateHubSpotContact(existingId[1], properties);
+      }
+      return { success: true, message: 'Kontakt existiert bereits' };
+    } else {
+      return { success: false, error: 'HubSpot API Fehler ' + statusCode };
+    }
+  } catch (error) {
+    Logger.log('HubSpot createContact Fehler: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Bestehenden HubSpot Kontakt aktualisieren
+ */
+function updateHubSpotContact(contactId, properties) {
+  try {
+    var url = HUBSPOT_API + '/crm/v3/objects/contacts/' + contactId;
+    var updateProps = {};
+    for (var key in properties) {
+      if (key !== 'email') updateProps[key] = properties[key];
+    }
+
+    var options = {
+      method: 'patch',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+      payload: JSON.stringify({ properties: updateProps }),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(url, options);
+    var statusCode = response.getResponseCode();
+    Logger.log('HubSpot updateContact (' + statusCode + ')');
+
+    return { success: statusCode === 200, hubspotId: contactId };
+  } catch (error) {
+    Logger.log('HubSpot updateContact Fehler: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Partner-Status in HubSpot auf "active" setzen (nach DOI-Bestätigung)
+ */
+function updateHubSpotPartnerStatus(email) {
+  try {
+    // Kontakt per E-Mail suchen
+    var searchUrl = HUBSPOT_API + '/crm/v3/objects/contacts/search';
+    var searchOptions = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+      payload: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'email', operator: 'EQ', value: email }] }],
+        properties: ['email', 'partner_status']
+      }),
+      muteHttpExceptions: true
+    };
+
+    var searchResponse = UrlFetchApp.fetch(searchUrl, searchOptions);
+    var searchResult = JSON.parse(searchResponse.getContentText());
+
+    if (searchResult.total > 0) {
+      var contactId = searchResult.results[0].id;
+      var updateUrl = HUBSPOT_API + '/crm/v3/objects/contacts/' + contactId;
+      var updateOptions = {
+        method: 'patch',
+        contentType: 'application/json',
+        headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+        payload: JSON.stringify({ properties: { 'partner_status': 'active' } }),
+        muteHttpExceptions: true
+      };
+
+      var updateResponse = UrlFetchApp.fetch(updateUrl, updateOptions);
+      Logger.log('HubSpot Partner-Status update (' + updateResponse.getResponseCode() + ') fuer: ' + email);
+      return { success: updateResponse.getResponseCode() === 200 };
+    } else {
+      Logger.log('HubSpot: Kein Kontakt gefunden fuer: ' + email);
+      return { success: false, error: 'Kontakt nicht gefunden' };
+    }
+  } catch (error) {
+    Logger.log('HubSpot updatePartnerStatus Fehler: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 // ===== HILFSFUNKTION: JSON-Antwort erstellen =====
 function jsonResponse(obj) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   output.setContent(JSON.stringify(obj));
   return output;
+}
+
+// Sicherheit: HTML-Sonderzeichen escapen (gegen HTML-Injection in E-Mails)
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**
@@ -71,6 +216,8 @@ function doPost(e) {
         return handleEditReferral(data);
       case 'uploadgewerbeanmeldung':
         return handleUploadGewerbeanmeldung(data);
+      case 'updateprofile':
+        return handleUpdateProfile(data);
       case 'register':
       default:
         return handleRegistration(data);
@@ -174,6 +321,20 @@ function handleRegistration(data) {
   } catch (mailError) {
     Logger.log('DOI-Mail Fehler: ' + mailError.message);
     // Formular trotzdem als Erfolg melden — Partner kann erneut angefordert werden
+  }
+
+  // HubSpot Kontakt anlegen (non-blocking, Fehler werden geloggt)
+  try {
+    createHubSpotContact({
+      vorname: data.vorname,
+      nachname: data.nachname,
+      email: data.email.toLowerCase().trim(),
+      telefon: data.telefon || '',
+      partnerId: partnerId,
+      steuernummer: data.steuernummer || ''
+    });
+  } catch (hsError) {
+    Logger.log('HubSpot-Eintrag Fehler: ' + hsError.message);
   }
 
   return jsonResponse({
@@ -390,20 +551,15 @@ function handleSaveBankData(data) {
 
   // Bankdaten in die entsprechenden Spalten schreiben
   var iban = (data.iban || '').trim();
-  var paypal = (data.paypal || '').trim();
   var steuernr = (data.steuernr || '').trim();
-  var methode = data.methode || '';
+  var methode = data.methode || 'Ueberweisung';
   var adresse = (data.adresse || '').trim();
   var art = data.art || '';
   var bic = (data.bic || '').trim();
 
-  // IBAN oder PayPal je nach Methode setzen
-  if (methode === 'Ueberweisung') {
+  // IBAN setzen
+  if (iban) {
     sheet.getRange(partnerRow + 1, 18).setValue(iban);     // Spalte R: IBAN
-    // PayPal nicht loeschen falls vorhanden
-  } else if (methode === 'PayPal') {
-    sheet.getRange(partnerRow + 1, 19).setValue(paypal);   // Spalte S: PayPal
-    // IBAN nicht loeschen falls vorhanden
   }
 
   // Steuernummer aktualisieren
@@ -436,10 +592,135 @@ function handleSaveBankData(data) {
 
   Logger.log('DW24: Bankdaten via Dashboard aktualisiert fuer ' + code);
 
+  // HubSpot-Sync: Bankdaten-relevante Felder aktualisieren (non-blocking)
+  try {
+    syncPartnerToHubSpot(email, {
+      'steuernummer': steuernr,
+      'betrieb_branche': firma
+    });
+  } catch (hubspotError) {
+    Logger.log('HubSpot Sync nach Bankdaten-Update fehlgeschlagen: ' + hubspotError.message);
+  }
+
   return jsonResponse({
     success: true,
     message: 'Bankdaten erfolgreich gespeichert.'
   });
+}
+
+// ============================================================
+// ACTION: Profildaten aktualisieren (NEU in v5.3)
+// ============================================================
+
+/**
+ * Profildaten aktualisieren: Wird vom Partner-Dashboard aufgerufen
+ * Aktualisiert Vorname, Nachname, Telefon, Firma, Steuernummer im Sheet + HubSpot
+ */
+function handleUpdateProfile(data) {
+  var email = (data.email || '').toLowerCase().trim();
+  var code = (data.code || '').toUpperCase().trim();
+
+  if (!email || !code) {
+    return jsonResponse({
+      success: false,
+      message: 'Authentifizierung fehlgeschlagen.'
+    });
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Partner');
+  var partnerData = sheet.getDataRange().getValues();
+
+  // Partner finden und validieren
+  var partnerRow = -1;
+  for (var i = 1; i < partnerData.length; i++) {
+    var rowEmail = partnerData[i][3].toString().toLowerCase().trim();
+    var rowCode = partnerData[i][5].toString().toUpperCase().trim();
+
+    if (rowEmail === email && rowCode === code) {
+      partnerRow = i;
+      break;
+    }
+  }
+
+  if (partnerRow === -1) {
+    return jsonResponse({
+      success: false,
+      message: 'Partner nicht gefunden oder Zugangsdaten ungueltig.'
+    });
+  }
+
+  // Felder aktualisieren
+  var vorname = (data.vorname || '').trim();
+  var nachname = (data.nachname || '').trim();
+  var telefon = (data.telefon || '').trim();
+  var firma = (data.firma || '').trim();
+  var steuernr = (data.steuernr || '').trim();
+
+  if (!vorname || !nachname) {
+    return jsonResponse({
+      success: false,
+      message: 'Vorname und Nachname sind Pflichtfelder.'
+    });
+  }
+
+  // Sheet aktualisieren
+  sheet.getRange(partnerRow + 1, 2).setValue(vorname);    // Spalte B: Vorname
+  sheet.getRange(partnerRow + 1, 3).setValue(nachname);   // Spalte C: Nachname
+  sheet.getRange(partnerRow + 1, 5).setValue(telefon);    // Spalte E: Telefon
+  if (firma) sheet.getRange(partnerRow + 1, 22).setValue(firma);      // Spalte V: Firma
+  if (steuernr) sheet.getRange(partnerRow + 1, 20).setValue(steuernr); // Spalte T: Steuernr
+
+  Logger.log('DW24: Profildaten via Dashboard aktualisiert fuer ' + code);
+
+  // HubSpot-Sync (non-blocking)
+  try {
+    syncPartnerToHubSpot(email, {
+      'firstname': vorname,
+      'lastname': nachname,
+      'phone': telefon,
+      'steuernummer': steuernr
+    });
+  } catch (hubspotError) {
+    Logger.log('HubSpot Sync nach Profil-Update fehlgeschlagen: ' + hubspotError.message);
+  }
+
+  return jsonResponse({
+    success: true,
+    message: 'Profildaten erfolgreich aktualisiert.'
+  });
+}
+
+/**
+ * Partner-Daten in HubSpot synchronisieren (per E-Mail-Suche)
+ * Wird bei Profil- und Bankdaten-Aenderungen aufgerufen
+ */
+function syncPartnerToHubSpot(email, properties) {
+  // Kontakt per E-Mail in HubSpot suchen
+  var searchUrl = HUBSPOT_API + '/crm/v3/objects/contacts/search';
+  var searchOptions = {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+    payload: JSON.stringify({
+      filterGroups: [{ filters: [{ propertyName: 'email', operator: 'EQ', value: email }] }],
+      properties: ['email']
+    }),
+    muteHttpExceptions: true
+  };
+
+  var searchResponse = UrlFetchApp.fetch(searchUrl, searchOptions);
+  var searchResult = JSON.parse(searchResponse.getContentText());
+
+  if (searchResult.total > 0) {
+    var contactId = searchResult.results[0].id;
+    var updateResult = updateHubSpotContact(contactId, properties);
+    Logger.log('HubSpot Sync fuer ' + email + ': ' + JSON.stringify(updateResult));
+    return updateResult;
+  } else {
+    Logger.log('HubSpot Sync: Kein Kontakt fuer ' + email + ' gefunden.');
+    return { success: false, message: 'Kontakt nicht gefunden' };
+  }
 }
 
 // ============================================================
@@ -480,6 +761,15 @@ function handleUploadGewerbeanmeldung(data) {
     return jsonResponse({
       success: false,
       message: 'Nur PDF-, PNG- und JPG-Dateien sind erlaubt.'
+    });
+  }
+
+  // Sicherheit: Dateigroesse pruefen (max 5 MB als Base64 = ca. 6.67 MB String)
+  var MAX_BASE64_LENGTH = 7 * 1024 * 1024; // 7 MB Base64-String-Limit
+  if (fileContent.length > MAX_BASE64_LENGTH) {
+    return jsonResponse({
+      success: false,
+      message: 'Die Datei ist zu gross. Maximal 5 MB erlaubt.'
     });
   }
 
@@ -562,8 +852,14 @@ function handleUploadGewerbeanmeldung(data) {
     sheet.getRange(partnerRow + 1, 23).setValue(fileUrl);  // Spalte W: Gewerbeanmeldung Drive-URL
     sheet.getRange(partnerRow + 1, 24).setValue(new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE')); // Spalte X: Upload-Datum
 
-    // Gmail-Entwurf erstellen fuer Manuel
-    var subject = 'Neue Gewerbeanmeldung: ' + vorname + ' ' + nachname + ' (' + partnerCode + ')';
+    // Gmail-Entwurf erstellen fuer Manuel (alle User-Daten HTML-escaped)
+    var safeVorname = escapeHtml(vorname);
+    var safeNachname = escapeHtml(nachname);
+    var safeEmail = escapeHtml(email);
+    var safeCode = escapeHtml(partnerCode);
+    var safeDriveFilename = escapeHtml(driveFilename);
+
+    var subject = 'Neue Gewerbeanmeldung: ' + escapeHtml(vorname) + ' ' + escapeHtml(nachname) + ' (' + escapeHtml(partnerCode) + ')';
     var htmlBody = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">'
       + '<div style="text-align:center;padding:20px 0;border-bottom:3px solid #FF8C00;">'
       + '<h1 style="color:#1A1A2E;font-size:24px;margin:0;">Digitalwerk24</h1>'
@@ -572,17 +868,17 @@ function handleUploadGewerbeanmeldung(data) {
       + '<p style="font-size:16px;color:#333;">Neue Gewerbeanmeldung hochgeladen:</p>'
       + '<table style="width:100%;border-collapse:collapse;margin:16px 0;">'
       + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;width:140px;">Partner:</td>'
-      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + vorname + ' ' + nachname + '</td></tr>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + safeVorname + ' ' + safeNachname + '</td></tr>'
       + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Empfehlungscode:</td>'
-      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + partnerCode + '</td></tr>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">' + safeCode + '</td></tr>'
       + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">E-Mail:</td>'
-      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + email + '</td></tr>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + safeEmail + '</td></tr>'
       + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Dateiname:</td>'
-      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + driveFilename + '</td></tr>'
+      + '<td style="padding:8px;border-bottom:1px solid #eee;">' + safeDriveFilename + '</td></tr>'
       + '<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Hochgeladen am:</td>'
       + '<td style="padding:8px;border-bottom:1px solid #eee;">' + datum + '</td></tr>'
       + '</table>'
-      + '<a href="' + fileUrl + '" '
+      + '<a href="' + escapeHtml(fileUrl) + '" '
       + 'style="background:#F97316;color:#fff;padding:12px 24px;border-radius:8px;'
       + 'text-decoration:none;font-size:14px;font-weight:bold;display:inline-block;">'
       + 'Gewerbeanmeldung in Drive oeffnen &rarr;</a>'
@@ -591,13 +887,46 @@ function handleUploadGewerbeanmeldung(data) {
       + '<p>Automatisch erstellt vom DW24 Empfehlungsprogramm</p></div></div>';
 
     GmailApp.createDraft('hello@digitalwerk24.com', subject,
-      'Neue Gewerbeanmeldung von ' + vorname + ' ' + nachname + ' (' + partnerCode + ')',
+      'Neue Gewerbeanmeldung von ' + escapeHtml(vorname) + ' ' + escapeHtml(nachname) + ' (' + escapeHtml(partnerCode) + ')',
       {
         htmlBody: htmlBody,
         name: 'Digitalwerk24 System',
         replyTo: email
       }
     );
+
+    // HubSpot: Gewerbeanmeldung-URL beim Partner-Kontakt speichern (non-blocking)
+    try {
+      var searchUrl = HUBSPOT_API + '/crm/v3/objects/contacts/search';
+      var searchPayload = {
+        filterGroups: [{
+          filters: [{ propertyName: 'email', operator: 'EQ', value: email }]
+        }],
+        properties: ['email']
+      };
+      var searchResp = UrlFetchApp.fetch(searchUrl, {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+        payload: JSON.stringify(searchPayload),
+        muteHttpExceptions: true
+      });
+      var searchData = JSON.parse(searchResp.getContentText());
+      if (searchData.total > 0) {
+        var contactId = searchData.results[0].id;
+        var updateUrl = HUBSPOT_API + '/crm/v3/objects/contacts/' + contactId;
+        UrlFetchApp.fetch(updateUrl, {
+          method: 'patch',
+          contentType: 'application/json',
+          headers: { 'Authorization': 'Bearer ' + HUBSPOT_TOKEN },
+          payload: JSON.stringify({ properties: { gewerbeanmeldung_url: fileUrl } }),
+          muteHttpExceptions: true
+        });
+        Logger.log('DW24: HubSpot Gewerbeanmeldung-URL gesetzt fuer Kontakt ' + contactId);
+      }
+    } catch (hubspotError) {
+      Logger.log('DW24: HubSpot Update fehlgeschlagen (non-blocking): ' + hubspotError.message);
+    }
 
     Logger.log('DW24: Gewerbeanmeldung hochgeladen fuer ' + partnerCode + ' → ' + fileUrl);
 
@@ -608,10 +937,11 @@ function handleUploadGewerbeanmeldung(data) {
     });
 
   } catch (uploadError) {
+    // Sicherheit: Nur generische Fehlermeldung an Client, Details nur ins Log
     Logger.log('DW24: Gewerbeanmeldung Upload-Fehler fuer ' + code + ': ' + uploadError.message);
     return jsonResponse({
       success: false,
-      message: 'Fehler beim Hochladen: ' + uploadError.message
+      message: 'Fehler beim Hochladen. Bitte versuche es erneut oder kontaktiere uns.'
     });
   }
 }
@@ -673,7 +1003,7 @@ function handleForgotCode(data) {
       + '</div>'
       // Body
       + '<div style="padding:30px 0;">'
-      + '<p style="font-size:16px;color:#333;">Hallo ' + vorname + ',</p>'
+      + '<p style="font-size:16px;color:#333;">Hallo ' + escapeHtml(vorname) + ',</p>'
       + '<p style="font-size:16px;color:#333;line-height:1.6;">'
       + 'du hast deinen Empfehlungscode angefordert. Hier ist er:</p>'
       + '<div style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:2px dashed #F97316;'
@@ -681,7 +1011,7 @@ function handleForgotCode(data) {
       + '<span style="display:block;font-size:13px;color:#64748B;text-transform:uppercase;'
       + 'letter-spacing:1px;font-weight:600;margin-bottom:8px;">Dein Empfehlungscode:</span>'
       + '<span style="font-size:2rem;font-weight:900;color:#F97316;letter-spacing:3px;'
-      + 'font-family:Courier New,monospace;">' + empfehlungscode + '</span>'
+      + 'font-family:Courier New,monospace;">' + escapeHtml(empfehlungscode) + '</span>'
       + '</div>'
       + '<p style="font-size:14px;color:#666;line-height:1.6;">'
       + 'Mit diesem Code und deiner E-Mail-Adresse kannst du dich jederzeit in dein '
@@ -1014,7 +1344,7 @@ function sendDoubleOptIn(email, vorname, partnerId, token) {
     + '</div>'
     // Body
     + '<div style="padding:30px 0;">'
-    + '<p style="font-size:16px;color:#333;">Hallo ' + vorname + ',</p>'
+    + '<p style="font-size:16px;color:#333;">Hallo ' + escapeHtml(vorname) + ',</p>'
     + '<p style="font-size:16px;color:#333;line-height:1.6;">'
     + 'vielen Dank fuer deine Anmeldung zum Empfehlungsprogramm!<br>'
     + 'Bitte bestaetige deine E-Mail-Adresse mit einem Klick:</p>'
@@ -1083,6 +1413,13 @@ function handleConfirmation(token, email) {
       // Token entfernen, DOI-Vermerk setzen
       sheet.getRange(i + 1, 21).setValue('DOI bestaetigt am ' + new Date().toLocaleDateString('de-DE'));
 
+      // HubSpot Partner-Status auf "active" setzen
+      try {
+        updateHubSpotPartnerStatus(email);
+      } catch (hsError) {
+        Logger.log('HubSpot Partner-Status Update Fehler: ' + hsError.message);
+      }
+
       var partnerId = data[i][0]; // Spalte A
       var vorname = data[i][1];   // Spalte B
 
@@ -1120,11 +1457,11 @@ function handleConfirmation(token, email) {
         + '<body><div class="card">'
         + '<div class="icon">&#127881;</div>'
         + '<h1>E-Mail bestaetigt!</h1>'
-        + '<p class="subtitle">Hallo ' + vorname + ', dein Konto ist jetzt aktiv. '
+        + '<p class="subtitle">Hallo ' + escapeHtml(vorname) + ', dein Konto ist jetzt aktiv. '
         + 'Hier ist dein persoenlicher Empfehlungscode:</p>'
         + '<div class="code-box">'
         + '<span class="code-label">Dein Empfehlungscode:</span>'
-        + '<span class="code">' + partnerId + '</span>'
+        + '<span class="code">' + escapeHtml(partnerId) + '</span>'
         + '</div>'
         + '<div class="info">'
         + '<p>&#128161; <strong>So geht\'s weiter:</strong></p>'
@@ -1272,14 +1609,14 @@ function createProvisionDraft(email, vorname, partnerCode, empfohlenerName, hatB
     + '<h1 style="color:#1A1A2E;font-size:24px;margin:0;">Digitalwerk24</h1>'
     + '<p style="color:#FF8C00;font-size:14px;margin:4px 0 0;">Empfehlungsprogramm</p></div>'
     + '<div style="padding:30px 0;">'
-    + '<p style="font-size:16px;color:#333;">Hallo ' + vorname + ',</p>'
+    + '<p style="font-size:16px;color:#333;">Hallo ' + escapeHtml(vorname) + ',</p>'
     + '<p style="font-size:16px;color:#333;line-height:1.6;">'
-    + 'grossartige Neuigkeiten! Deine Empfehlung <strong>' + empfohlenerName + '</strong> '
+    + 'grossartige Neuigkeiten! Deine Empfehlung <strong>' + escapeHtml(empfohlenerName) + '</strong> '
     + 'hat einen Auftrag bei uns abgeschlossen und bezahlt.</p>'
     + '<div style="background:#1A1A2E;border-radius:8px;padding:24px;text-align:center;margin:20px 0;">'
     + '<p style="color:#ccc;font-size:14px;margin:0 0 8px;">Deine Provision</p>'
     + '<p style="color:#FF8C00;font-size:42px;font-weight:bold;margin:0;">199,00 \u20AC</p>'
-    + '<p style="color:#ccc;font-size:12px;margin:8px 0 0;">Empfehlungscode: ' + partnerCode + '</p></div>'
+    + '<p style="color:#ccc;font-size:12px;margin:8px 0 0;">Empfehlungscode: ' + escapeHtml(partnerCode) + '</p></div>'
     + bankdatenBlock
     + '<p style="font-size:14px;color:#333;line-height:1.6;">'
     + 'Vielen Dank fuer deine Empfehlung! Weiter so &mdash; fuer jede weitere erfolgreiche '
