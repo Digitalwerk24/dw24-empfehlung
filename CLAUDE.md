@@ -15,7 +15,7 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 ### Ablauf des Programms
 1. Interessent registriert sich über die Landingpage (Name, Firma, Steuernr., E-Mail, optional Telefon)
 2. Double-Opt-In: Bestätigungsmail mit Verifizierungslink wird automatisch gesendet
-3. Nach Bestätigung: Digitalwerk24 vergibt einen individuellen Tracking-Code (z.B. DW24-ANNA01)
+3. Nach Bestätigung: Digitalwerk24 vergibt einen individuellen Tracking-Code (z.B. DW24-XHRT4NB2, kryptografisch zufällig seit v6.0)
 4. Partner loggt sich im Dashboard ein (empfehlung.digitalwerk24.com/partner)
 5. Partner empfiehlt DW24 an Handwerker/Gründer und trägt Empfehlung im Dashboard ein
 6. Neukunde nennt den Code bei Kontaktaufnahme/Buchung
@@ -32,7 +32,7 @@ Ein offenes Provisionsprogramm, bei dem **jede Person** (Studenten, Freelancer, 
 
 ### Tech-Stack
 - **Frontend:** Statische HTML/CSS/JS (index.html + partner.html)
-- **Backend:** Google Apps Script (standalone Web-App, v4.4)
+- **Backend:** Google Apps Script (standalone Web-App, v6.0)
 - **Datenbank:** Google Sheets (6 Tabellenblätter)
 - **Bankdaten-Formular:** Google Forms (verknüpft mit Sheet) + Partner-Dashboard
 - **Hosting:** Vercel (Auto-Deploy bei Push auf main)
@@ -90,7 +90,7 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 | C | Nachname |
 | D | E-Mail |
 | E | Telefon |
-| F | Empfehlungscode (z.B. DW24-ANNA01) |
+| F | Empfehlungscode (z.B. DW24-XHRT4NB2, kryptografisch zufällig seit v6.0) |
 | G | Status (Neu / Bestätigt / Aktiv / Inaktiv) |
 | H | Registrierung am |
 | I | Double-Opt-In am |
@@ -170,11 +170,11 @@ In Cloudflare wurden folgende DNS-Einträge für digitalwerk24.com angelegt:
 - Partner tragen Empfehlungen über ihr Dashboard ein
 - Jede Empfehlung wird parallel auch ins Empfehlungen-Sheet geschrieben (für Provisions-Workflow)
 
-### Google Apps Script – Web-App v4.5
+### Google Apps Script – Web-App v6.0
 - **Projekt-Name:** "DW24 Empfehlungsprogramm" (im Google Workspace digitalwerk24.com)
 - **Projekt-URL:** `https://script.google.com/home/projects/1LFxZh7lzKt-evL2WCR6W9NC0KOqyFOxbeDiw2Gf4ODQzFObZEuGN1Uhf/edit`
 - **Web-App-URL:** `https://script.google.com/macros/s/AKfycbzd2spgoH2ulFLPljUOnw9bjQ-3ryFsnKw5vUYUDujXgvWg25OeWn6huUn9QO9Qtrgu/exec`
-- **Aktuelle Version:** Version 10 (deployed 12.03.2026, 11:01) – v4.5 Gewerbeanmeldung-Upload
+- **Aktuelle Version:** Version 17 (deployed 24.03.2026, 11:11) – v6.0 Security-Hardening
 - **Bereitstellung:** öffentlich ("Jeder"), ausgeführt als hello@digitalwerk24.com
 - **Projekttyp:** Standalone (NICHT an Spreadsheet gebunden)
 - **Lokale Referenzkopie:** `google-apps-script.gs` (im Repository)
@@ -385,9 +385,9 @@ Felder:
 - **Gewerbeanmeldung-Upload:** Eigene Sektion mit Drag & Drop Upload (PDF/PNG/JPG, max 5MB), Status-Anzeige (fehlend/hochgeladen), Drive-Link, Erneut-hochladen-Funktion (NEU v4.5)
 - Mobile-First, gleiches Design wie Landingpage (Orange #F97316)
 
-#### Backend (Google Apps Script v4.5)
+#### Backend (Google Apps Script v6.0)
 - Google Sheets Datenbank mit 6 Tabellenblättern (Partner, Empfehlungen, Auszahlungen, Dashboard, Formularantworten, Partner-Empfehlungen)
-- **Apps Script v4.5** mit Action-Routing im doPost-Endpunkt:
+- **Apps Script v6.0** mit Action-Routing im doPost-Endpunkt:
   - `action=register`: Partner-Registrierung + DOI-Mail (v4.4: Firma in Spalte V, Steuernr. in Spalte T bei Registrierung)
   - `action=login`: Partner-Login, gibt Dashboard-Daten inkl. Firma + Empfehlungen (inkl. PE-Details) + Bankdaten zurück
   - `action=saveBankData`: Bankdaten direkt aus dem Dashboard speichern (v4.4: Firma aktualisierbar)
@@ -451,6 +451,24 @@ Felder:
 - ✅ Hero Partikel-Animation (12.03.2026) – Canvas-basierte goldene Lichtpunkte mit Glow-Effekt im Hero-Bereich
 - ✅ Apps Script v4.5 deployed (Version 10, 12.03.2026, 11:01) – Gewerbeanmeldung-Upload: handleUploadGewerbeanmeldung, Spalten W/X, Google Drive Ordner, Gmail-Entwurf
 - ✅ Gewerbeanmeldung-Upload im Partner-Dashboard (12.03.2026) – Upload-Sektion mit Drag & Drop, Status-Anzeige, Drive-Link, Erneut-hochladen
+- ✅ **Apps Script v6.0 Security-Hardening deployed (Version 17, 24.03.2026, 11:11):**
+  - K1: Partner-Codes jetzt kryptografisch zufällig (DW24-XHRT4NB2 statt DW24-ANNA05)
+  - K2+K3: Rate-Limiting via CacheService (5 Logins/15 Min., 3 Registrierungen/Stunde)
+  - K4: DOI-Token läuft nach 48 Stunden ab
+  - H1: IBAN maskiert in Login-Antwort (DE12****5678), Gewerbeanmeldung nur Boolean
+  - H2: Partner-Code nicht mehr in Registrierungsantwort (erst nach DOI sichtbar)
+  - H3: Generische Fehlermeldungen (keine E-Mail-Enumeration mehr)
+  - H4: HubSpot-Kontakt erst nach DOI-Bestätigung erstellt
+  - H7: Magic-Bytes-Prüfung beim Datei-Upload (PDF/PNG/JPG Signatur)
+  - M1: IP-Abruf (ipify.org) erst nach Formular-Submit (DSGVO-konform)
+  - M5: Generische Fehlermeldung im Haupt-Catch-Block
+  - M6: Content Security Policy Meta-Tag auf beiden Seiten
+  - M8: Formula-Injection-Schutz für Google Sheets (=, +, -, @ gefiltert)
+  - M9: Eingabelängen serverseitig begrenzt (100 Zeichen für Namen etc.)
+  - N10: Health-Check ohne Versionsnummer
+  - Status "Neu" statt "Aktiv" bei Registrierung (erst nach DOI "Aktiv")
+- ✅ Sicherheitsaudit-Bericht erstellt (24.03.2026) – DOCX mit 35 Findings (4 kritisch, 8 hoch, 11 mittel, 12 niedrig)
+- ✅ Frontend-Sicherheitsfixes deployed via Vercel (24.03.2026) – CSP, IP-Fetch, IBAN-Maskierung, Drive-Link entfernt
 
 ## Deployment-Checkliste
 
@@ -517,6 +535,7 @@ Felder:
 | Google Analytics | `G-1XWYSG8LLW` |
 
 ### Git-Verlauf (relevante Commits)
+- `f145ce1` – v6.0 Security-Hardening: Rate-Limiting, zufällige Partner-Codes, IBAN-Maskierung (24.03.2026)
 - `bf32581` – Apps Script v4.5 deployed (Version 10): Neue Web-App-URL aktualisiert (12.03.2026)
 - `d5ae843` – Fix: Gewerbeanmeldung-Datum korrekt parsen (12.03.2026)
 - `09a0d9b` – Gewerbeanmeldung-Upload im Partner-Dashboard v4.5 (12.03.2026)
@@ -544,7 +563,8 @@ Felder:
 ### Dateien im Repository
 - `index.html` – Komplette Landingpage (HTML/CSS/JS in einer Datei) mit Partner-Login-Button
 - `partner.html` – Partner-Dashboard (Login + Provisionen + Bankdaten + Empfehlungsverwaltung)
-- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v4.5)
+- `google-apps-script.gs` – Lokale Referenzkopie des Apps Script Codes (v6.0)
+- `Sicherheitsaudit-Empfehlungsprogramm-2026-03-24.docx` – Sicherheitsaudit-Bericht (24.03.2026)
 - `vercel.json` – Vercel-Konfiguration (Routing für partner.html als /partner)
 - `CLAUDE.md` – Diese Projektdokumentation
 - `STARTPROMPT.md` – Initialer Projektbrief
@@ -556,3 +576,56 @@ Felder:
 - `DSGVO-Compliance-Report-empfehlung-digitalwerk24.docx` – DSGVO Compliance-Report (Website-Audit)
 - `create_sheets_template.py` – Helper-Script zum Erstellen der Sheets-Vorlage
 - `.gitignore` – Git-Ausschlussliste
+
+## Sicherheitsmaßnahmen (v6.0, Stand 24.03.2026)
+
+### Rate-Limiting (Backend)
+| Action | Limit | Zeitfenster |
+|--------|-------|-------------|
+| register | 3 Anfragen | 1 Stunde |
+| login | 5 Versuche | 15 Minuten |
+| forgotcode | 3 Anfragen | 1 Stunde |
+| submitreferral | 10 Anfragen | 1 Stunde |
+| uploadgewerbeanmeldung | 5 Anfragen | 1 Stunde |
+
+Implementiert via `CacheService.getScriptCache()` mit Sliding-Window per E-Mail/Action.
+
+### Partner-Code-Generierung
+- **Vor v6.0:** Vorhersagbar — `DW24-[VORNAME4][ZEILENNR]` (z.B. DW24-ANNA05)
+- **Ab v6.0:** Kryptografisch zufällig — `DW24-[8_RANDOM_CHARS]` (z.B. DW24-XHRT4NB2)
+- Basiert auf `Utilities.getUuid()`, Zeichensatz ohne verwechselbare Zeichen (kein 0/O, 1/I/L)
+- Bestehende Partner behalten ihre alten Codes
+
+### Datenmaskierung (Login-Antwort)
+- IBAN wird maskiert zurückgegeben: `DE12****5678`
+- Gewerbeanmeldung: nur Boolean `gewerbeanmeldungVorhanden` statt Google Drive URL
+- Drive-Link nicht mehr im Frontend sichtbar
+
+### DOI-Token
+- UUID-basiert (122 Bit Zufälligkeit)
+- **Ablauf nach 48 Stunden** (Registrierungszeitstempel wird im Token-Feld mitgespeichert)
+- Format im Sheet: `DOI-TOKEN:uuid|TS:2026-03-24T11:00:00.000Z`
+
+### Upload-Validierung
+- Client-seitig: MIME-Type + 5 MB Limit
+- Server-seitig: MIME-Type + 7 MB Base64-Limit + **Magic-Bytes-Prüfung** (PDF: %PDF, PNG: \x89PNG, JPG: \xFF\xD8\xFF)
+
+### Input-Sanitierung
+- `sanitizeInput()`: Eingabelängen begrenzt (100 Zeichen Namen, 254 E-Mail, 500 Adressen etc.)
+- `sanitizeForSheet()`: Formula-Injection verhindert (=, +, -, @ am Feldanfang werden escaped)
+- `escapeHtml()`: HTML-Injection in E-Mails verhindert (14 Stellen)
+
+### Content Security Policy (Frontend)
+Beide Seiten (index.html, partner.html) haben einen CSP Meta-Tag:
+```
+default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;
+connect-src 'self' https://script.google.com https://api.web3forms.com https://api.ipify.org;
+frame-src 'none'; object-src 'none';
+```
+
+### Offene Sicherheits-Themen
+- **API-Secret:** Shared Key für Apps Script Endpoint (geplant)
+- **CSRF-Token:** Session-basiertes Nonce (geplant)
+- **Session-Management:** Serverseitige JWT/Session-ID statt E-Mail+Code in sessionStorage (geplant)
+- **Consent-Logging:** Cookie-Einwilligung serverseitig dokumentieren (M7)
+- **EU-Vertreter Art. 27 DSGVO:** Für Revis-1 LLC zwingend erforderlich (K1 aus DSGVO-Audit)
