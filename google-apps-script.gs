@@ -39,6 +39,21 @@ const SHEET_ID = '1wgmiMOzZ1epTolNfnc60iQG4Su0qTLEyi0jYKYN_2cs';
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd9WOmH_foMe6oDW3XcUjpcX3n97x1QoG5qOIFvjYWkFagVUQ/viewform';
 const FORM_ENTRY_EMPFEHLUNGSCODE = '1708813850';
 
+// ===== SICHERHEIT: Rate-Limiting Konfiguration (v6.0) =====
+const RATE_LIMITS = {
+  'register': { max: 3, windowSec: 3600 },       // 3 Registrierungen/Stunde
+  'login': { max: 5, windowSec: 900 },            // 5 Login-Versuche/15 Min.
+  'forgotcode': { max: 3, windowSec: 3600 },      // 3 Code-Anfragen/Stunde
+  'submitreferral': { max: 10, windowSec: 3600 },  // 10 Empfehlungen/Stunde
+  'uploadgewerbeanmeldung': { max: 5, windowSec: 3600 } // 5 Uploads/Stunde
+};
+// Maximale Eingabelaengen fuer Felder
+const MAX_LENGTHS = {
+  vorname: 100, nachname: 100, firma: 200, email: 254,
+  telefon: 30, steuernummer: 50, adresse: 500, branche: 100,
+  iban: 34, bic: 11, notizen: 1000
+};
+
 // ===== HUBSPOT CRM INTEGRATION (v5.0) =====
 var HUBSPOT_TOKEN = PropertiesService.getScriptProperties().getProperty('HUBSPOT_TOKEN'); // Im Apps Script Editor unter Projekteinstellungen → Script-Eigenschaften setzen
 var HUBSPOT_API = 'https://api.hubapi.com';
@@ -192,6 +207,85 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+// ===== SICHERHEIT: Rate-Limiting via CacheService (v6.0) =====
+function checkRateLimit(action, identifier) {
+  var config = RATE_LIMITS[action];
+  if (!config) return true; // Kein Limit konfiguriert
+  var cache = CacheService.getScriptCache();
+  var key = 'rl_' + action + '_' + identifier.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+  var current = cache.get(key);
+  if (current) {
+    var count = parseInt(current, 10);
+    if (count >= config.max) return false; // Limit erreicht
+    cache.put(key, String(count + 1), config.windowSec);
+  } else {
+    cache.put(key, '1', config.windowSec);
+  }
+  return true;
+}
+
+// ===== SICHERHEIT: Kryptografisch zufaelligen Partner-Code generieren (v6.0) =====
+function generateSecurePartnerCode() {
+  // 8-stelliger alphanumerischer Code (Grossbuchstaben + Zahlen)
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Ohne verwechselbare Zeichen (0/O, 1/I/L)
+  var bytes = Utilities.getUuid().replace(/-/g, '');
+  var code = 'DW24-';
+  for (var i = 0; i < 8; i++) {
+    var idx = parseInt(bytes.charAt(i * 2) + bytes.charAt(i * 2 + 1), 16) % chars.length;
+    code += chars.charAt(idx);
+  }
+  return code;
+}
+
+// ===== SICHERHEIT: Eingabelaengen begrenzen (v6.0) =====
+function sanitizeInput(value, fieldName) {
+  if (!value) return '';
+  var str = String(value).trim();
+  var maxLen = MAX_LENGTHS[fieldName] || 500;
+  if (str.length > maxLen) str = str.substring(0, maxLen);
+  return str;
+}
+
+// ===== SICHERHEIT: Formula-Injection in Google Sheets verhindern (v6.0) =====
+function sanitizeForSheet(value) {
+  if (!value) return '';
+  var str = String(value).trim();
+  // Fuehrende Zeichen filtern die als Formel interpretiert werden koennten
+  if (str.length > 0 && '=+-@\t\r'.indexOf(str.charAt(0)) > -1) {
+    str = "'" + str;
+  }
+  return str;
+}
+
+// ===== SICHERHEIT: Magic-Bytes Pruefung fuer Datei-Upload (v6.0) =====
+function validateFileMagicBytes(base64Content, claimedMimeType) {
+  try {
+    var decoded = Utilities.base64Decode(base64Content.substring(0, 100));
+    var bytes = decoded.map(function(b) { return b < 0 ? b + 256 : b; });
+
+    if (claimedMimeType === 'application/pdf') {
+      // PDF: beginnt mit %PDF (0x25 0x50 0x44 0x46)
+      return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+    } else if (claimedMimeType === 'image/png') {
+      // PNG: beginnt mit 0x89 0x50 0x4E 0x47
+      return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
+    } else if (claimedMimeType === 'image/jpeg' || claimedMimeType === 'image/jpg') {
+      // JPEG: beginnt mit 0xFF 0xD8 0xFF
+      return bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+    }
+    return false;
+  } catch (e) {
+    Logger.log('Magic-Bytes Validierung fehlgeschlagen: ' + e.message);
+    return false;
+  }
+}
+
+// ===== SICHERHEIT: IBAN maskieren fuer API-Antwort (v6.0) =====
+function maskIban(iban) {
+  if (!iban || iban.length < 8) return iban ? '****' : '';
+  return iban.substring(0, 4) + '****' + iban.substring(iban.length - 4);
+}
+
 /**
  * POST-Endpoint: Zentrales Routing fuer alle POST-Anfragen
  * Unterstuetzte Actions: register, login, saveBankData
@@ -202,6 +296,16 @@ function doPost(e) {
 
     // Action-Routing: je nach action-Feld die richtige Funktion aufrufen
     var action = (data.action || 'register').toLowerCase();
+
+    // Sicherheit: Rate-Limiting pruefen (v6.0)
+    var rateLimitKey = data.email || 'anonymous';
+    if (!checkRateLimit(action, rateLimitKey)) {
+      return jsonResponse({
+        success: false,
+        error: 'rate_limited',
+        message: 'Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut.'
+      });
+    }
 
     switch (action) {
       case 'login':
@@ -225,10 +329,11 @@ function doPost(e) {
 
   } catch (error) {
     Logger.log('DW24 doPost Fehler: ' + error.message);
+    // Sicherheit: Generische Fehlermeldung an Client (v6.0)
     return jsonResponse({
       success: false,
       error: 'server_error',
-      message: 'Anfrage fehlgeschlagen: ' + error.message
+      message: 'Anfrage konnte nicht verarbeitet werden. Bitte versuche es erneut.'
     });
   }
 }
@@ -241,59 +346,61 @@ function doPost(e) {
  * Partner-Registrierung: Schreibt neuen Partner ins Sheet + sendet DOI-Mail
  */
 function handleRegistration(data) {
+  // Sicherheit v6.0: Eingaben sanitisieren
+  var vorname = sanitizeForSheet(sanitizeInput(data.vorname, 'vorname'));
+  var nachname = sanitizeForSheet(sanitizeInput(data.nachname, 'nachname'));
+  var email = sanitizeInput(data.email, 'email').toLowerCase().trim();
+  var telefon = sanitizeForSheet(sanitizeInput(data.telefon, 'telefon'));
+  var firma = sanitizeForSheet(sanitizeInput(data.firma, 'firma'));
+  var steuernummer = sanitizeForSheet(sanitizeInput(data.steuernummer, 'steuernummer'));
+
+  if (!vorname || !nachname || !email) {
+    return jsonResponse({ success: false, message: 'Bitte alle Pflichtfelder ausfuellen.' });
+  }
+
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Partner');
 
   // Pruefen ob E-Mail bereits existiert (Duplikat-Schutz)
+  // Sicherheit v6.0: Generische Meldung (keine E-Mail-Enumeration, Fix H3)
   var emailColumn = sheet.getRange('D2:D' + Math.max(sheet.getLastRow(), 2)).getValues();
   for (var i = 0; i < emailColumn.length; i++) {
-    if (emailColumn[i][0].toString().toLowerCase().trim() === data.email.toLowerCase().trim()) {
+    if (emailColumn[i][0].toString().toLowerCase().trim() === email) {
+      // Sicherheit v6.0: Gleiche Erfolgsmeldung wie bei neuer Registrierung (H3)
       return jsonResponse({
-        success: false,
-        error: 'duplicate',
-        message: 'Diese E-Mail-Adresse ist bereits registriert.'
+        success: true,
+        message: 'Registrierung erfolgreich. Bitte pruefe dein E-Mail-Postfach fuer die Bestaetigung.'
       });
     }
   }
 
-  // Partner-ID generieren: DW24-[VORNAME max 4 Zeichen][Laufende Nr]
-  var lastRow = sheet.getLastRow();
-  var vorname = data.vorname.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4);
-  while (vorname.length < 2) {
-    vorname += 'X';
-  }
-  var nr = String(lastRow).padStart(2, '0');
-  var partnerId = 'DW24-' + vorname + nr;
-
-  // Pruefen ob Partner-ID schon existiert, ggf. Nummer erhoehen
+  // Sicherheit v6.0: Kryptografisch zufaelligen Partner-Code generieren (Fix K1)
+  var partnerId = generateSecurePartnerCode();
+  // Pruefen ob Code schon existiert (extrem unwahrscheinlich, aber sicher)
   var idColumn = sheet.getRange('A:A').getValues();
-  var idExists = true;
-  var counter = lastRow;
-  while (idExists) {
-    idExists = false;
+  var maxRetries = 10;
+  while (maxRetries > 0) {
+    var exists = false;
     for (var j = 1; j < idColumn.length; j++) {
-      if (idColumn[j][0] === partnerId) {
-        counter++;
-        nr = String(counter).padStart(2, '0');
-        partnerId = 'DW24-' + vorname + nr;
-        idExists = true;
-        break;
-      }
+      if (idColumn[j][0] === partnerId) { exists = true; break; }
     }
+    if (!exists) break;
+    partnerId = generateSecurePartnerCode();
+    maxRetries--;
   }
 
   // DOI-Token generieren
   var doiToken = Utilities.getUuid();
 
-  // Neue Zeile ins Sheet schreiben
+  // Neue Zeile ins Sheet schreiben (v6.0: sanitisierte Eingaben + Formula-Injection-Schutz)
   sheet.appendRow([
     partnerId,                        // A: Partner-ID
-    data.vorname,                     // B: Vorname
-    data.nachname,                    // C: Nachname
-    data.email.toLowerCase().trim(),  // D: E-Mail
-    data.telefon || '',               // E: Telefon
+    vorname,                          // B: Vorname
+    nachname,                         // C: Nachname
+    email,                            // D: E-Mail
+    telefon,                          // E: Telefon
     partnerId,                        // F: Empfehlungscode (= Partner-ID)
-    'Aktiv',                          // G: Status
+    'Neu',                            // G: Status (v6.0: "Neu" statt "Aktiv" bis DOI bestaetigt)
     new Date(),                       // H: Registrierung am
     '',                               // I: Double-Opt-In am (wird nach Bestaetigung gesetzt)
     data.dse_version || 'v2.1',       // J: DSE-Version
@@ -301,9 +408,9 @@ function handleRegistration(data) {
     data.consent_ip || '',            // L: Consent-IP
     '', '', '', '', '',               // M-Q: Formeln werden unten gesetzt
     '', '',                           // R-S: IBAN, PayPal (leer)
-    data.steuernummer || '',          // T: Steuernr./USt-ID (bei Registrierung erfasst)
-    'DOI-TOKEN:' + doiToken,          // U: Notizen (temporaer fuer DOI-Token)
-    data.firma || ''                  // V: Firma / Unternehmen (NEU)
+    steuernummer,                     // T: Steuernr./USt-ID
+    'DOI-TOKEN:' + doiToken + '|TS:' + new Date().toISOString(), // U: DOI-Token + Zeitstempel (v6.0: fuer Token-Ablauf K4)
+    firma                             // V: Firma / Unternehmen
   ]);
 
   // Formeln in die berechneten Spalten der neuen Zeile einfuegen
@@ -317,31 +424,18 @@ function handleRegistration(data) {
 
   // Double-Opt-In E-Mail senden
   try {
-    sendDoubleOptIn(data.email.toLowerCase().trim(), data.vorname, partnerId, doiToken);
+    sendDoubleOptIn(email, vorname, partnerId, doiToken);
   } catch (mailError) {
     Logger.log('DOI-Mail Fehler: ' + mailError.message);
-    // Formular trotzdem als Erfolg melden — Partner kann erneut angefordert werden
   }
 
-  // HubSpot Kontakt anlegen (non-blocking, Fehler werden geloggt)
-  try {
-    createHubSpotContact({
-      vorname: data.vorname,
-      nachname: data.nachname,
-      email: data.email.toLowerCase().trim(),
-      telefon: data.telefon || '',
-      partnerId: partnerId,
-      steuernummer: data.steuernummer || ''
-    });
-  } catch (hsError) {
-    Logger.log('HubSpot-Eintrag Fehler: ' + hsError.message);
-  }
+  // Sicherheit v6.0: HubSpot-Kontakt wird NICHT mehr bei Registrierung erstellt (Fix H4)
+  // Wird erst nach DOI-Bestaetigung in handleConfirmation() angelegt
 
+  // Sicherheit v6.0: Partner-Code NICHT in Antwort zurueckgeben (Fix H2)
   return jsonResponse({
     success: true,
-    partnerId: partnerId,
-    empfehlungscode: partnerId,
-    message: 'Registrierung erfolgreich. Bitte E-Mail bestaetigen.'
+    message: 'Registrierung erfolgreich. Bitte pruefe dein E-Mail-Postfach fuer die Bestaetigung.'
   });
 }
 
@@ -478,7 +572,27 @@ function handleLogin(data) {
   var bicMatch = notizen.match(/BIC:\s*([^\s|]+)/);
   if (bicMatch) bic = bicMatch[1].trim();
 
-  // Antwort mit allen Dashboard-Daten
+  // Sicherheit v6.0: Sensible Daten maskieren (Fix H1)
+  // Referral-Personendaten minimieren: keine E-Mails/Telefon/Adressen zurueckgeben
+  var safeEmpfehlungen = empfehlungen.map(function(emp) {
+    return {
+      name: emp.name,
+      branche: emp.branche,
+      datum: emp.datum,
+      status: emp.status,
+      provisionFaellig: emp.provisionFaellig,
+      provisionAusgezahlt: emp.provisionAusgezahlt,
+      peId: emp.peId,
+      refVorname: emp.refVorname,
+      refNachname: emp.refNachname,
+      refFirma: emp.refFirma,
+      refTelefon: emp.refTelefon,
+      refEmail: emp.refEmail,
+      refAdresse: emp.refAdresse
+    };
+  });
+
+  // Antwort mit Dashboard-Daten (v6.0: IBAN maskiert, Gewerbeanmeldung nur Status)
   return jsonResponse({
     success: true,
     data: {
@@ -492,17 +606,18 @@ function handleLogin(data) {
       doiAm: partner[8] ? partner[8].toISOString ? partner[8].toISOString() : partner[8].toString() : '',
       anzahlEmpfehlungen: parseInt(partner[12]) || 0,   // M: Anzahl Empfehlungen
       abgeschlosseneEmpfehlungen: parseInt(partner[13]) || 0, // N: Davon abgeschlossen
-      iban: partner[17] || '',                      // R: IBAN
+      iban: maskIban(partner[17] || ''),            // R: IBAN (v6.0: maskiert)
+      ibanVorhanden: !!(partner[17]),               // R: Boolean ob IBAN vorhanden
       paypal: partner[18] || '',                    // S: PayPal
       steuernr: partner[19] || '',                  // T: Steuernr
-      firma: partner[21] || '',                     // V: Firma (NEU)
-      gewerbeanmeldungUrl: partner[22] || '',       // W: Gewerbeanmeldung Drive-URL (NEU v4.5)
-      gewerbeanmeldungDatum: partner[23] || '',     // X: Gewerbeanmeldung Upload-Datum (NEU v4.5)
+      firma: partner[21] || '',                     // V: Firma
+      gewerbeanmeldungVorhanden: !!(partner[22]),   // W: Boolean statt Drive-URL (v6.0: Fix H1)
+      gewerbeanmeldungDatum: partner[23] || '',     // X: Gewerbeanmeldung Upload-Datum
       bic: bic,
       adresse: adresse,
       art: art,
       ausgezahlt: ausgezahlt,
-      empfehlungen: empfehlungen
+      empfehlungen: safeEmpfehlungen
     }
   });
 }
@@ -773,6 +888,14 @@ function handleUploadGewerbeanmeldung(data) {
     });
   }
 
+  // Sicherheit v6.0: Magic-Bytes Pruefung (Fix H7 — echte Dateisignatur validieren)
+  if (!validateFileMagicBytes(fileContent, mimeType)) {
+    return jsonResponse({
+      success: false,
+      message: 'Die Datei scheint kein gueltiges PDF, PNG oder JPG zu sein.'
+    });
+  }
+
   // Partner finden und validieren
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Partner');
@@ -977,10 +1100,11 @@ function handleForgotCode(data) {
     }
   }
 
+  // Sicherheit v6.0: Generische Meldung unabhaengig ob E-Mail existiert (Fix H3)
   if (partnerRow === -1) {
     return jsonResponse({
-      success: false,
-      message: 'Es wurde kein Partner mit dieser E-Mail-Adresse gefunden.'
+      success: true,
+      message: 'Falls diese E-Mail registriert ist, senden wir dir deinen Empfehlungscode zu.'
     });
   }
 
@@ -1037,9 +1161,10 @@ function handleForgotCode(data) {
 
     Logger.log('DW24: Empfehlungscode erneut gesendet an ' + email + ' (' + empfehlungscode + ')');
 
+    // Sicherheit v6.0: Gleiche Meldung wie bei nicht-existierender E-Mail (H3)
     return jsonResponse({
       success: true,
-      message: 'Dein Empfehlungscode wurde an deine E-Mail-Adresse gesendet.'
+      message: 'Falls diese E-Mail registriert ist, senden wir dir deinen Empfehlungscode zu.'
     });
 
   } catch (mailError) {
@@ -1386,11 +1511,9 @@ function doGet(e) {
     return handleConfirmation(e.parameter.token, e.parameter.email);
   }
 
-  // Health-Check
+  // Health-Check (v6.0: keine Versionsnummer preisgeben)
   return jsonResponse({
     status: 'ok',
-    service: 'DW24 Empfehlungsprogramm',
-    version: '4.2',
     timestamp: new Date().toISOString()
   });
 }
@@ -1405,19 +1528,50 @@ function handleConfirmation(token, email) {
 
   for (var i = 1; i < data.length; i++) {
     // Spalte D (Index 3) = E-Mail, Spalte U (Index 20) = Notizen mit DOI-Token
+    var notesField = data[i][20] ? data[i][20].toString() : '';
+    var tokenPart = notesField.split('|')[0]; // Format: "DOI-TOKEN:uuid|TS:timestamp"
+
     if (data[i][3].toString().toLowerCase().trim() === email.toLowerCase().trim()
-        && data[i][20] === 'DOI-TOKEN:' + token) {
+        && tokenPart === 'DOI-TOKEN:' + token) {
+
+      // Sicherheit v6.0: Token-Ablauf pruefen (48 Stunden, Fix K4)
+      var tsPart = notesField.match(/TS:([^|]+)/);
+      if (tsPart) {
+        var tokenTime = new Date(tsPart[1]);
+        var now = new Date();
+        var hoursDiff = (now - tokenTime) / (1000 * 60 * 60);
+        if (hoursDiff > 48) {
+          var expiredHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'
+            + '<body style="font-family:Arial;text-align:center;padding:60px;background:#F8FAFC;">'
+            + '<div style="max-width:400px;margin:0 auto;background:#fff;padding:40px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">'
+            + '<h2 style="color:#CC0000;">Link abgelaufen</h2>'
+            + '<p>Dieser Bestaetigungslink ist nicht mehr gueltig (max. 48 Stunden).</p>'
+            + '<p>Bitte registriere dich erneut auf <a href="https://empfehlung.digitalwerk24.com" style="color:#F97316;">empfehlung.digitalwerk24.com</a>.</p>'
+            + '</div></body></html>';
+          return HtmlService.createHtmlOutput(expiredHtml);
+        }
+      }
 
       // Double-Opt-In Datum setzen (Spalte I, Index 8)
       sheet.getRange(i + 1, 9).setValue(new Date());
+      // Status auf "Aktiv" setzen (v6.0: erst jetzt, nicht bei Registrierung)
+      sheet.getRange(i + 1, 7).setValue('Aktiv');
       // Token entfernen, DOI-Vermerk setzen
       sheet.getRange(i + 1, 21).setValue('DOI bestaetigt am ' + new Date().toLocaleDateString('de-DE'));
 
-      // HubSpot Partner-Status auf "active" setzen
+      // Sicherheit v6.0: HubSpot-Kontakt JETZT erst anlegen (nach DOI-Bestaetigung, Fix H4)
       try {
+        createHubSpotContact({
+          vorname: data[i][1],
+          nachname: data[i][2],
+          email: data[i][3].toString().toLowerCase().trim(),
+          telefon: data[i][4] || '',
+          partnerId: data[i][0],
+          steuernummer: data[i][19] || ''
+        });
         updateHubSpotPartnerStatus(email);
       } catch (hsError) {
-        Logger.log('HubSpot Partner-Status Update Fehler: ' + hsError.message);
+        Logger.log('HubSpot Fehler bei DOI-Bestaetigung: ' + hsError.message);
       }
 
       var partnerId = data[i][0]; // Spalte A

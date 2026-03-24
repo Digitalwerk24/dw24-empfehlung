@@ -6,6 +6,8 @@
     <title>199€ pro Empfehlung verdienen | Digitalwerk24 Partnerprogramm</title>
     <meta name="description" content="Verdiene 199€ für jede erfolgreiche Empfehlung. Einfach Handwerker oder Gründer empfehlen und kassieren. Kostenlos, ohne Verpflichtung, ohne Limit.">
     <meta name="robots" content="noindex, nofollow">
+    <!-- Sicherheit v6.0: Content Security Policy (Fix M6) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://api.web3forms.com https://api.ipify.org https://www.google-analytics.com https://www.googletagmanager.com; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
 
     <!-- Open Graph / Social Media Vorschau -->
     <meta property="og:type" content="website">
@@ -2188,12 +2190,20 @@
         const DSE_VERSION = 'v2.1';
         const TB_VERSION = 'v1.1';
 
-        // IP-Adresse ermitteln (fuer DSGVO Consent-Logging)
+        // Sicherheit v6.0: IP-Adresse wird erst beim Formular-Submit abgerufen (Fix M1 — DSGVO)
         let userIP = '';
-        fetch('https://api.ipify.org?format=json')
-            .then(r => r.json())
-            .then(data => { userIP = data.ip; })
-            .catch(() => { userIP = 'nicht ermittelbar'; });
+        async function fetchUserIP() {
+            if (userIP) return userIP;
+            try {
+                const r = await fetch('https://api.ipify.org?format=json');
+                const data = await r.json();
+                userIP = data.ip;
+                return userIP;
+            } catch (e) {
+                userIP = 'nicht ermittelbar';
+                return userIP;
+            }
+        }
 
         // Fehler anzeigen/verstecken
         function showFormError(msg) {
@@ -2230,6 +2240,9 @@
             const telefon = document.getElementById('telefon').value.trim();
 
             try {
+                // Sicherheit v6.0: IP erst jetzt abrufen (nach Formular-Submit, DSGVO-konform)
+                await fetchUserIP();
+
                 // ---- Schritt 1: Google Apps Script (Partner ins Sheet + DOI-Mail senden) ----
                 const sheetData = {
                     vorname: vorname,
@@ -2266,9 +2279,7 @@
 
                 // ---- Schritt 2: Web3Forms (E-Mail-Benachrichtigung an hello@digitalwerk24.com) ----
                 const formData = new FormData(form);
-                if (sheetResult.empfehlungscode) {
-                    formData.append('Empfehlungscode', sheetResult.empfehlungscode);
-                }
+                // v6.0: Partner-Code wird nicht mehr in Antwort zurueckgegeben (Sicherheitsfix H2)
                 formData.append('Marketing-Einwilligung', consentMarketing.checked ? 'Ja' : 'Nein');
 
                 try {
@@ -2277,7 +2288,6 @@
                         body: formData
                     });
                 } catch (emailErr) {
-                    // Web3Forms-Fehler blockieren nicht die Anmeldung
                     console.warn('Web3Forms-Fehler:', emailErr);
                 }
 
@@ -2286,7 +2296,7 @@
                     gtag('event', 'sign_up', {
                         method: 'empfehlungsprogramm',
                         event_category: 'conversion',
-                        event_label: sheetResult.empfehlungscode || 'unbekannt'
+                        event_label: 'partner_registration'
                     });
                     // Google Ads Conversion: Partner-Registrierung
                     gtag('event', 'conversion', {

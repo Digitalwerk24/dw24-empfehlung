@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partner-Dashboard | Digitalwerk24 Empfehlungsprogramm</title>
     <meta name="robots" content="noindex, nofollow">
+    <!-- Sicherheit v6.0: Content Security Policy (Fix M6) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://script.google.com https://api.web3forms.com https://www.google-analytics.com https://www.googletagmanager.com; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
     <link rel="icon" type="image/png" sizes="32x32" href="DW-24-Logo.png">
     <link rel="apple-touch-icon" href="DW-24-Logo.png">
 
@@ -1938,7 +1940,8 @@
             const viewLink = document.getElementById('gewerbeViewLink');
             const reuploadBtn = document.getElementById('gewerbeReuploadBtn');
 
-            if (data.gewerbeanmeldungUrl) {
+            // Sicherheit v6.0: Backend gibt nur Boolean statt Drive-URL zurueck
+            if (data.gewerbeanmeldungVorhanden) {
                 // Gewerbeanmeldung vorhanden
                 completeEl.style.display = 'flex';
                 missingEl.style.display = 'none';
@@ -1947,7 +1950,6 @@
                 // Datum anzeigen
                 if (data.gewerbeanmeldungDatum) {
                     let datum = data.gewerbeanmeldungDatum;
-                    // Falls ISO-Format (YYYY-MM-DD), manuell parsen um Zeitzonen-Offset zu vermeiden
                     if (datum.includes('-') && !datum.includes('T')) {
                         var parts = datum.split('-');
                         datum = parseInt(parts[2]) + '.' + parseInt(parts[1]) + '.' + parts[0];
@@ -1957,9 +1959,8 @@
                     document.getElementById('gewerbeDatum').textContent = datum;
                 }
 
-                // Drive-Link anzeigen
-                viewLink.href = data.gewerbeanmeldungUrl;
-                viewLink.style.display = 'inline-flex';
+                // v6.0: Drive-Link nicht mehr anzeigen (Sicherheit)
+                viewLink.style.display = 'none';
 
                 // Erneut hochladen Button
                 reuploadBtn.style.display = 'inline-flex';
@@ -2046,7 +2047,8 @@
             const bankDisplay = document.getElementById('bankDisplay');
             const bankEditForm = document.getElementById('bankEditForm');
 
-            if (data.iban) {
+            // v6.0: Backend gibt maskierte IBAN zurueck + ibanVorhanden Boolean
+            if (data.ibanVorhanden || data.iban) {
                 // Bankdaten vorhanden – Anzeige-Modus
                 complete.style.display = 'flex';
                 missing.style.display = 'none';
@@ -2054,10 +2056,8 @@
                 bankEditForm.style.display = 'none';
                 document.getElementById('cancelBankBtn').style.display = 'inline-flex';
 
-                // Anzeige-Felder befuellen
-                // IBAN maskieren (nur letzte 4 Zeichen sichtbar)
-                var ibanMasked = data.iban.length > 4 ? '••••' + data.iban.slice(-4) : data.iban;
-                document.getElementById('bankDispIban').textContent = ibanMasked;
+                // v6.0: IBAN kommt bereits maskiert vom Backend
+                document.getElementById('bankDispIban').textContent = data.iban || '****';
                 document.getElementById('bankDispBic').textContent = data.bic || '—';
                 document.getElementById('bankDispFirma').textContent = data.firma || '—';
                 document.getElementById('bankDispSteuer').textContent = data.steuernr || '—';
@@ -2088,7 +2088,8 @@
 
         // Bankdaten-Formular vorausfuellen
         function fillBankForm(data) {
-            document.getElementById('bankIban').value = data.iban || '';
+            // v6.0: IBAN-Feld leer lassen (Backend gibt nur maskierte IBAN zurueck)
+            document.getElementById('bankIban').value = '';
             document.getElementById('bankBic').value = data.bic || '';
             if (data.steuernr) document.getElementById('bankSteuer').value = data.steuernr;
             if (data.firma) document.getElementById('bankFirma').value = data.firma;
